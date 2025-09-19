@@ -1,0 +1,12 @@
+- name: firewall script rsync
+  synchronize:
+    src: "rsync://{{ setup_ip }}/config/firewall"
+    dest: "/etc/init.d/firewall"
+    mode: pull
+    checksum: yes
+
+- name: firewall restart
+  service:
+    name: firewall
+    state: restarted
+    enabled: yes 

@@ -1,0 +1,29 @@
+- name: 언어셋 설정
+  copy:
+    dest: /etc/locale.conf
+    content: 'LANG="ko_KR.UTF-8"'
+
+- name: SELinux 비활성화
+  selinux:
+    policy: targeted
+    state: disabled
+
+- name: 타임존 설정
+  timezone:
+    name: Asia/Seoul
+
+- name: 기본 디렉터리 생성
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /local_backup
+    - /www
+
+- name: /var/tmp 링크 생성
+  file:
+    path: /var/tmp
+    src: /tmp
+    state: link
+

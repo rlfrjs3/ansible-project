@@ -1,0 +1,17 @@
+- name: sendmail.cf backup
+  copy:
+    src: /etc/mail/sendmail.cf
+    dest: /etc/mail/sendmail_old
+    remote_src: yes
+
+- name: sendmail.cf edit
+  lineinfile:
+    path: /etc/mail/sendmail.cf
+    regexp: '^#Dj\$w.Foo.COM'
+    line: "Dj{{ hostname }}.firstmall.kr"
+
+- name: sendmail restart
+  service:
+    name: sendmail
+    state: restarted
+    enabled: yes

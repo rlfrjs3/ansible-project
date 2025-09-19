@@ -1,0 +1,13 @@
+- name: Quota remount
+  mount:
+    path: /www
+    src: /dev/sda2
+    fstype: ext4
+    opts: "usrquota,grpquota"
+    state: mounted
+
+- name: Quota check (=create Quota database)
+  command: quotacheck -avfugm
+
+- name: Quota ON
+  command: quotaon /www

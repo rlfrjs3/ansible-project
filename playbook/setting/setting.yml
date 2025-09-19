@@ -1,0 +1,52 @@
+---
+- name: initial OS Setting
+  hosts: test
+  become: yes
+  become_method: sudo
+  vars:
+    role_path: "/local_backup/ansible-project/roles"
+    setup_ip: "121.78.114.175::set"
+    src: "/usr/local/src"
+  
+  vars_prompt:
+    - name: "hostname"
+      prompt: "호스트네임을 입력하세요: "
+      private: no
+ 
+    - name: "shoppass"
+      prompt: "shopbuilder 패스워드를 입력하세요: "
+      private: yes
+
+    - name: "zlxpfpass"
+      prompt: "zlxpf 패스워드를 입력하세요: "
+      private: yes
+
+    - name: "rootpass"
+      prompt: "root 패스워드를 입력하세요: "
+      private: yes
+  
+      
+  tasks:
+    - name: ip_addr 변수
+      shell: ifconfig eth0 | grep -w inet | awk '{ gsub("addr:", "" ) ; print $2}'
+      register: ip_addr
+    - name: ip_addr debug
+      debug: 
+        var: ip_addr.stdout
+
+  
+  roles:
+    - role: "{{ role_path }}/setting/yum_install"
+    - role: "{{ role_path }}/setting/default_setting"
+    - role: "{{ role_path }}/setting/service_install"
+     
+    
+
+
+
+
+
+
+
+
+    

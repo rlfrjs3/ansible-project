@@ -1,0 +1,30 @@
+- name: letsencrypt 설치
+  block:
+    - name: 가상환경 생성
+      pip:
+        virtualenv: /usr/local/certbot
+        virtualenv_command: python3 -m venv
+        virtualenv_python: python3
+
+    - name: pip 최신화
+      pip:
+        name: pip
+        virtualenv: /usr/local/certbot
+        state: latest
+
+    - name: cerbot 및 pyopenssl 설치
+      pip:
+        name:
+          - cerbot==1.23.0
+          - pyopenssl==23.1.0
+        virtualenv: /usr/local/certbot
+
+    - name: certbot 심볼릭 링크 생성
+      file:
+        src: /usr/local/certbot/bin/certbot
+        dest: /usr/bin/certbot
+        state: link
+
+    - name: certbot 버전 확인
+      command: certbot --version
+

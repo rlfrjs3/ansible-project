@@ -1,0 +1,47 @@
+---
+
+- name: 계정&웹로그&conf 파일 삭제
+  shell: | 
+    if [ "{{ account_name.stdout | length }}" -gt 0 ]; then
+      userdel -r {{ account_name.stdout | trim }}
+    fi 
+    rm -rf /www/{{ homedir_name }}
+    rm -rf /web_log/{{ homedir_name }} && rm -fv {{ conf_path.stdout}}{{ domain_name }}.conf
+  delegate_to: "{{ old_web_ip }}"
+
+
+- name: Set SSL cert name if exists
+  set_fact:
+    ssl_cert_name: "{{ (ssl_info.stdout_lines[1] | default('')) }}"
+
+- name: Delete freeSSL
+  shell: |
+    /usr/local/bin/certbot-auto delete --cert-name {{ ssl_cert_name }}
+  when: ssl_cert_name != ''
+  delegate_to: "{{ old_web_ip }}"
+
+- name: No freeSSL domain found
+  debug:
+    msg: "삭제할 무료SSL 도메인이 없습니다."
+  when: ssl_cert_name == ''
+  delegate_to: "{{ old_web_ip }}"
+
+
+
+- name: Apache 설정 문법 체크
+  command: apachectl -t
+  register: apache_check
+  ignore_errors: yes  # 에러가 나도 플레이북 중단하지 않음
+  delegate_to: "{{  old_web_ip }}"
+
+- name: Apache 설정이 정상일 경우 graceful
+  command: apachectl graceful
+  when: apache_check.rc == 0
+  delegate_to: "{{  old_web_ip }}"
+
+- name: Apache 설정 오류 출력
+  debug:
+    msg: "Apache 설정 오류 발생:{{ apache_check.stderr }}"
+  when: apache_check.rc != 0
+  delegate_to: "{{  old_web_ip }}"
+ 

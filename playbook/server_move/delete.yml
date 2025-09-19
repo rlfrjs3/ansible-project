@@ -1,0 +1,81 @@
+---
+- name : 기존서버 삭제  playbook
+  hosts: localhost
+  user: zlxpf
+  become: true
+  become_method: sudo 
+
+  vars_prompt:
+    - name: old_web_ip
+      prompt: "구 웹서버 IP를 입력해주세요."
+      private: no 
+    - name: domain_name
+      prompt: "임시도메인을 입력해주세요. (ex. test.firstmall.kr)"
+      private: no
+    - name: old_db_ip
+      prompt: "구 DB서버 IP를 입력해주세요."
+      private: no
+    - name: db_name
+      prompt: "DB 이름을 입력해주세요."
+      private: no
+
+
+#공통변수 설정(하위 roles에서 사용)
+  tasks:
+    - name: 1.homedir_name 
+      set_fact:
+        homedir_name: "{{ domain_name | replace('.', '_') | replace('-', '_') }}"
+    - name: homedir_name debug
+      debug: 
+        var: homedir_name
+
+
+    - name: 2.account_name
+      shell: "awk -F: '$6 == \"/www/{{ homedir_name }}/data\" {print $1}' /etc/passwd"
+      register: account_name
+      delegate_to: "{{ old_web_ip }}"
+    - name: account_name debug
+      debug: 
+        var: account_name.stdout
+    
+
+    - name: 3.conf_path 
+      shell: |
+        if [ -e "/etc/httpd/conf/{{ domain_name }}.conf" ]; then
+          echo "/etc/httpd/conf/"
+        else
+          echo "/usr/local/apache/conf/"
+        fi
+      register: conf_path
+      delegate_to: "{{ old_web_ip }}"
+    - name: conf_path debug
+      debug: 
+        var: conf_path.stdout
+
+
+    - name: 4.ssl_info
+      shell: |
+        count=$(grep -w ServerName {{ conf_path.stdout }}{{ domain_name }}.conf | grep -v "firstmall.kr" | wc -l)
+        ssl_domain=$(grep -w ServerName {{ conf_path.stdout }}{{ domain_name }}.conf | grep -v "firstmall.kr" | awk '{print $2}')
+        echo "$count"
+        echo "$ssl_domain"
+
+      register: ssl_info
+      delegate_to: "{{ old_web_ip }}"
+    - name: ssl_info debug
+      debug: 
+        var: ssl_info.stdout_lines
+
+    
+    - name: DB root 비밀번호
+      include_vars:
+        file: /etc/ansible/roles/db/vars/password.yml
+
+
+#roles 파일 (순차적으로 실행)
+    - include_role: 
+        name: web
+        tasks_from: delete.yml
+    - include_role: 
+        name: db
+        tasks_from: delete.yml

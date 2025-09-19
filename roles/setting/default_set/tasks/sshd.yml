@@ -1,0 +1,17 @@
+- name: ansible SSH key 
+  authorized_key:
+    user: zlxpf
+    state: present
+    key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzu8WLG4H7FGxTBVtarzuiLoZSY1+TCR4dH7ta4bHBVEK6dUFYlzSh55Qbw/rayQEj3Fxs7gV+TNV4hv1TMwlGctnxoehH8R/8WMudPYPYAcPhY8NguE5B8rHPvxXqi53YdqPRkowGaia84goZ8rYUzOfV7yvmgb0pZ7WNgrzGLZ5t/PebeDwcMvTAuk5AQCKwJdaYiGrqvsGf4aoZhsnnoFi74RqKA2zgZkO2m9ctZ9a2VH6foHv5ATw94wM876Tx6fLWx86lbnP+ePrfvQpu7yMn9uy4qqEJGOT17Pc0z36FvIoQY1VisYECoX1UO9C81xes8oBFd3M4SNVEUr8/ root@shop-se114-12'
+
+- name: PAM access.conf 
+  lineinfile:
+    path: /etc/security/access.conf
+    line: "{{ item }}"
+    state: present
+  loop:
+    - '+ : ALL EXCEPT zlxpf shopbuilder : ALL'
+    - '+ : zlxpf : 106.246.242.226 121.78.114.12'
+    - '+ : shopbuilder : 106.246.242.226 139.150.65.122'
+    - '- : ALL : ALL'
+

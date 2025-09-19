@@ -1,0 +1,49 @@
+---
+#passwd/shadow 파일 수정 & 아파치 재시작
+
+- name: passwd EDIT
+  shell: | 
+    usermod -d /www/{{ homedir_name }} {{ account_name.stdout | trim }} &&
+    usermod -s /bin/bash {{ account_name.stdout | trim }} 
+  when: account_name.stdout_lines | length > 0
+  delegate_to: "{{ new_web_ip }}"
+  
+
+
+
+- name: shadow EDIT
+  shell: "grep '^{{ account_name.stdout | trim }}:' /etc/shadow"
+  register: shadow_line
+  delegate_to: "{{ old_web_ip }}"
+
+- name: add shadow_line
+  lineinfile:
+    path: /etc/shadow
+    regexp: "^{{ account_name.stdout | trim }}:"  #account_name이 있는 줄을 찾음
+    line: "{{ shadow_line.stdout }}"  #shadow_line 값으로 교체
+    create: no   #shadow 파일이 없어도 새로 생성하지 않음
+  delegate_to: "{{ new_web_ip }}"
+
+
+
+
+- name: Apache Syntax check
+  command: apachectl -t
+  register: apache_check
+  ignore_errors: yes  # 에러가 나도 플레이북 중단하지 않음
+  delegate_to: "{{ new_web_ip }}"
+
+- name: Apache graceful
+  command: apachectl graceful
+  when: apache_check.rc == 0
+  delegate_to: "{{ new_web_ip }}"
+
+- name: Apache Error 
+  debug:
+    msg: "Apache 설정 오류 발생:{{ apache_check.stderr }}"
+  when: apache_check.rc != 0
+  delegate_to: "{{ new_web_ip }}"
+
+
+
+

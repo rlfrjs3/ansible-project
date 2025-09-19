@@ -1,0 +1,41 @@
+---
+- name: Firewall Inbound Ruleset 
+  hosts: firewall
+  user: zlxpf
+  become: yes
+  become_method: sudo
+
+  vars:
+    filewall_conf: "/usr/local/manage_hosting/firewall/input_accept.conf"
+
+  vars_prompt:
+    - name: "ip"
+      prompt: "추가할 ip를 입력하세요 (ex. 1.1.1.1 또는 1.1.1.0/24)"
+      private: no
+
+    - name: "port"
+      prompt: "서버 포트를 입력하세요"
+      private: no
+
+    - name: "protocol"
+      prompt: "프로토콜을 입력하세요"
+      private: no
+
+    - name: "comment"
+      prompt: "주석을 입력하세요"
+      private: no
+
+
+
+  tasks:
+    - name: add Ruleset
+      lineinfile:
+        path: "{{ filewall_conf }}"
+        line: "\n# {{ comment }}\n{{ ip }}           0:      {{ port }}   {{ protocol }}"
+        create: yes
+        backup: yes
+        state: present
+  
+    - name: firewall restart
+      command: /etc/init.d/firewall restart
+ 

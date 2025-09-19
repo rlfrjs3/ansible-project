@@ -1,0 +1,12 @@
+- name: chrony.conf 배포
+  synchronize:
+    src: "rsync://{{ setup_ip }}/config/rocky/chrony.conf"
+    dest: "/etc/chrony.conf"
+    mode: pull
+    checksum: yes
+
+- name: chronyd 서비스 재시작
+  service:
+    name: chronyd
+    state: restarted
+    enabled: yes

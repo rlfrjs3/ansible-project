@@ -1,0 +1,44 @@
+---
+#사이트 비활성화 & rsync & 무료SSL 이전 & 소유권 변경
+
+- name: Site blocking
+  shell: mv {{ conf_path.stdout }}/vhost/{{ domain_name }}.conf {{ conf_path.stdout }} && apachectl graceful
+  delegate_to: "{{ old_web_ip }}"
+
+
+- name: File rsync
+  shell: |
+    rsync -av --exclude=database.php --delete {{ old_web_ip }}::www2/{{ homedir_name }}/ /www/{{ homedir_name }}/ &&
+    rsync -av {{ old_web_ip }}::R/web_log/{{ homedir_name }}/ /web_log/{{ homedir_name }} &&
+    rsync -av {{ old_web_ip }}::R{{ conf_path.stdout }}{{ domain_name }}.conf {{ conf_path.stdout }}/vhost/{{ domain_name }}.conf 
+  delegate_to: "{{ new_web_ip }}"
+
+
+- name: freeSSL rsync
+  shell: |
+    if [ "{{ ssl_info.stdout_lines[0] }}" -gt 0  ]; then
+      rsync -av {{ old_web_ip }}::R/etc/letsencrypt/archive/{{ ssl_info.stdout_lines[1] }}/ /etc/letsencrypt/archive/{{ ssl_info.stdout_lines[1] }}
+      rsync -av {{ old_web_ip }}::R/etc/letsencrypt/live/{{ ssl_info.stdout_lines[1] }}/ /etc/letsencrypt/live/{{ ssl_info.stdout_lines[1] }}
+      rsync -av {{ old_web_ip }}::R/etc/letsencrypt/renewal/{{ ssl_info.stdout_lines[1] }}.conf /etc/letsencrypt/renewal/{{ ssl_info.stdout_lines[1] }}.conf
+      /bin/sed -i "/^account =/c\account = {{ ssl_info.stdout_lines[2] }}" /etc/letsencrypt/renewal/{{ ssl_info.stdout_lines[1] }}.conf
+    else
+      echo "무료SSL 도메인이 확인되지 않습니다."
+    fi
+  delegate_to: "{{ new_web_ip }}"
+
+
+- name: Chown
+  shell: | 
+    user=$(awk -F: -v hd="/www/{{ homedir_name }}" '$6 ~ "^"hd {print $1}' /etc/passwd)
+    if [ -z "$user" ]; then
+      echo "Error: 계정명이 확인되지 않음"
+      exit 1
+    fi
+    find /www/{{ homedir_name }} ! -user {{ account_name.stdout }} -exec chown {{ account_name.stdout }}.mallusers {} \;
+    find /www/{{ homedir_name }} \( -uid +999 -uid -60000 -o -gid +999 -gid -60000 \) -exec chown {{ account_name.stdout }}.mallusers {} \;
+    chown -R nobody.mallusers /www/{{ homedir_name }}/_compile
+    chown -R root.mallusers /web_log/{{ homedir_name }}
+  delegate_to: "{{ new_web_ip }}"
+
+
+

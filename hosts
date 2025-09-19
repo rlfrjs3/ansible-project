@@ -1,0 +1,114 @@
+# This is the default ansible 'hosts' file.
+#
+# It should live in /etc/ansible/hosts
+#
+#   - Comments begin with the '#' character
+#   - Blank lines are ignored
+#   - Groups of hosts are delimited by [header] elements
+#   - You can enter hostnames or ip addresses
+#   - A hostname/ip can be a member of multiple groups
+
+# Ex 1: Ungrouped hosts, specify before any group headers.
+
+## green.example.com
+## blue.example.com
+## 192.168.100.1
+## 192.168.100.10
+
+# Ex 2: A collection of hosts belonging to the 'webservers' group
+
+## [webservers]
+## alpha.example.org
+## beta.example.org
+## 192.168.1.100
+## 192.168.1.110
+
+# If you have multiple hosts following a pattern you can specify
+# them like this:
+
+## www[001:006].example.com
+
+# Ex 3: A collection of database servers in the 'dbservers' group
+
+## [dbservers]
+## 
+## db01.intranet.mydomain.net
+## db02.intranet.mydomain.net
+## 10.25.1.56
+## 10.25.1.57
+
+# Here's another example of host ranges, this time there are no
+# leading 0s:
+
+## db-[99:101]-node.example.com
+
+#[webhosting_web_all:children]
+#linux
+#unlimit
+#wa-only
+
+[all:vars]
+ansible_user=zlxpf
+
+[gwmart]
+139.150.73.11
+139.150.73.63
+
+
+[asics]
+#103.55.190.238 hostname=asicsweb-16
+#103.55.190.242 hostname=asicsweb-17
+#103.55.190.243 hostname=asicsweb-18
+#103.55.190.245 hostname=asicsweb-19
+#139.150.76.195 hostname=asicsweb-20
+#139.150.76.207 hostname=asicsweb-21
+#139.150.76.211 hostname=asicsweb-22
+#139.150.76.219 hostname=asicsweb-23
+#139.150.76.226 hostname=asicsweb-24
+#139.150.76.230 hostname=asicsweb-25
+
+[asicslog]
+#139.150.76.205	hostname=asicsweb-04
+#103.55.190.240	hostname=asicsweb-05
+#139.150.76.214	hostname=asicsweb-06
+#139.150.76.221	hostname=asicsweb-07
+#139.150.76.224	hostname=asicsweb-08
+#139.150.76.225	hostname=asicsweb-09
+#139.150.76.228	hostname=asicsweb-10
+#139.150.76.229	hostname=asicsweb-11
+#139.150.76.250	hostname=asicsweb-12
+#139.150.76.251	hostname=asicsweb-13
+#139.150.76.252	hostname=asicsweb-14
+#139.150.76.253	hostname=asicsweb-15
+
+[jdm-test]
+121.78.197.153 hostname=firstpg-server197-153
+
+[diad-dev]
+139.150.70.137 hostname=devmarketings
+
+[geditor-stage]
+211.169.249.73 hostname=geditor-staging
+
+[clickn-org]
+139.150.73.225
+
+[geontest]
+121.78.197.103  hostname=firstpg-server197-103
+
+
+[clickn-dbpatch]
+139.150.71.158	hostname=clickn-sample
+139.150.75.210	hostname=clickn-db01
+139.150.74.113	hostname=clickn-db02
+139.150.65.195	hostname=clickn-db03
+139.150.74.129	hostname=clickn-db04
+139.150.74.11	hostname=clickn-db05
+139.150.74.165	hostname=clickn-db06
+
+[sanencheong]
+103.55.190.200
+
+[firewall]
+121.78.197.103
+121.78.197.228

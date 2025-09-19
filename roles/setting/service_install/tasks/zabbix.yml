@@ -1,0 +1,54 @@
+- name: zabbix rsync
+  synchronize: 
+    src: "rsync://{{ setup_ip }}/config/zabbix/client/zabbix-agent-4.4.8-1.el8.x86_64.rpm"
+    dest: "/usr/local/src/"
+    mode: pull
+    checksum: yes
+
+- name: zabbix install
+  yum:
+    name: "/usr/local/src/zabbix-agent-4.4.8-1.el8.x86_64.rpm"
+    state: present
+
+- name: zabbix systemd rsync
+  synchronize:
+    src: "rsync://{{ setup_ip }}/config/zabbix/client/zabbix-agent.service" 
+    dest: "/usr/lib/systemd/system/"
+    mode: pull
+    checksum: yes
+
+- name: zabbix etc rsync
+  synchronize:
+    src: "rsync://{{ setup_ip }}/config/zabbix/client/etc/"
+    dest: "/etc/zabbix/"
+    mode: pull
+    checksum: yes
+    delete: yes
+
+- name: chmod 
+  file:
+    path: /var/log/zabbix
+    state: directory
+    owner: zabbix
+    group: zabbix
+    mode: "0700"
+
+- name: sudoers
+  lineinfile:
+    path: /etc/sudoers
+    state: present
+    line: "zabbix     ALL= NOPASSWD: /etc/zabbix/script/*"
+
+- name: log
+  lineinfile:
+    path: /etc/sudoers.d/99-zabbix-no-log
+    state: present
+    line: "Defaults:zabbix !pam_session, !syslog"
+
+- name: zabbix start
+  systemd:
+    name: zabbix-agent
+    state: started 
+    enabled: yes 
+
+  

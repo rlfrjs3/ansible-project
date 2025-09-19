@@ -1,0 +1,28 @@
+- name: hosts setting
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ item }}"
+    state: present
+    create: yes
+  loop:
+    - "{{ ip_addr.stdout }} localhost localhost.localdomain"
+    - "{{ ip_addr.stdout }} {{ ip_addr.stdout }} {{ ip_addr.stdout }}.firstmall.kr"
+
+- name: resolv.conf setting
+  lineinfile:
+    path: /etc/resolv.conf
+    line: "{{ item }}"
+    state: present
+    create: yes
+  loop: 
+    - "options timeout:1 attempts:1"
+    - "nameserver 127.0.0.1" 
+    - "nameserver 164.124.101.2"
+    - "nameserver 168.126.63.1"
+
+- name: dnsmasq restart
+  service: 
+    name: dnsmasq
+    state: restarted 
+    enabled: yes
+

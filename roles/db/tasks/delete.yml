@@ -1,0 +1,9 @@
+- name: DB 삭제
+  shell: |
+    /usr/local/mysql/bin/mysql -h {{ old_db_ip }} -uroot -p'{{ db_root_password }}' -e "DROP DATABASE {{ db_name }};" && 
+    /usr/local/mysql/bin/mysql -h {{ old_db_ip }} -uroot -p'{{ db_root_password }}' -e "DELETE FROM mysql.user WHERE user='{{ db_name }}';" &&
+    /usr/local/mysql/bin/mysql -h {{ old_db_ip }} -uroot -p'{{ db_root_password }}' -e "DELETE FROM mysql.db WHERE db='{{ db_name }}';" &&
+    /usr/local/mysql/bin/mysql -h {{ old_db_ip }} -uroot -p'{{ db_root_password }}' -e "flush privileges;" 
+  delegate_to: "{{ old_web_ip }}"
+
+  

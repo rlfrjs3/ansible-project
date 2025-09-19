@@ -1,0 +1,23 @@
+---
+- name: powertool enable
+  command: /usr/bin/dnf config-manager --set-enable powertools
+
+- name: 기본 패키지 리스트 로드
+  include_vars:
+    file: ../vars/base_packages.yml
+
+- name: 기본 패키지 설치
+  dnf:
+    name: "{{ packages }}"
+    state: present
+
+- name: python 패키지 리스트 로드
+  include_vars:
+    file: ../vars/python_packages.yml
+
+- name: python 패키지 설치
+  dnf:
+    name: "{{ packages }}"
+    state: present
+
+
