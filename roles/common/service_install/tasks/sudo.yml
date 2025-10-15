@@ -1,0 +1,14 @@
+- name: sudo 셋팅
+  blockinfile:
+    path: /etc/sudoers
+    state: present
+    block: |  
+      shopbuilder     ALL= NOPASSWD: /usr/bin/rsync
+      shopbuilder     ALL= NOPASSWD: /bin/cp
+      shopbuilder     ALL= NOPASSWD: /bin/rm
+      shopbuilder     ALL= NOPASSWD: /bin/ln
+      shopbuilder     ALL= NOPASSWD: /bin/chown
+      shopbuilder     ALL= NOPASSWD: /bin/chmod
+      shopbuilder     ALL= NOPASSWD: /usr/local/php/bin/php
+      shopbuilder     ALL= NOPASSWD: /usr/bin/systemctl reload php-fpm
+    marker: ""

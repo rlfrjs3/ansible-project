@@ -1,0 +1,27 @@
+- name: HASP 설치
+  shell: | 
+    rsync -a {{ SETUP }}::set/config/hasp/ /usr/local/hasp/
+
+- name: pipenv 설치
+  pip:
+    name: pipenv
+    version: 2022.4.8
+    executable: pip3
+
+- name: pipenv 생성
+  shell: |
+    pipenv --python 3.6
+  args:
+    chdir: /usr/local/hasp
+
+- name: HASP 설치
+  shell: |
+    python install
+  args:
+    chdir: /usr/local/hasp
+
+- name: HASP 시작
+  shell: |
+    ./haspd start
+  args:
+    chdir: /usr/local/hasp 

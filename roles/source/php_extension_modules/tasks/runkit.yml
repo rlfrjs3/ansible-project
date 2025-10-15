@@ -1,0 +1,27 @@
+- name: php_runkit 설치
+  block:
+    - name: 설치파일 rsync
+      shell: | 
+        rsync -a {{ SETUP }}::set/config/upgrade/runkit7-4.0.0a6.tgz {{ SRC }}/
+
+    - name: 압축해제      
+      unarchive:
+        src: "{{ SRC }}/runkit7-4.0.0a6.tgz"
+        dest: "{{ SRC }}/"
+        remote_src: yes
+
+    - name: 설치
+      shell: | 
+        /usr/local/php/bin/phpize
+        ./configure --with-php-config=/usr/local/php/bin/php-config
+      args:
+        chdir: "{{ SRC }}/runkit7-4.0.0a6"
+      register: configure_result 
+      ignore_errors: false
+
+    - name: make & make install 
+      shell: | 
+        make -j 4 && make install 
+      args:
+        chdir: "{{ SRC }}/runkit7-4.0.0a6"
+      when: configure_result.rc == 0  

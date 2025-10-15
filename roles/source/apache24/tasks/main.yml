@@ -1,0 +1,86 @@
+- name: 설치 전, MySQL stop
+  service:
+    name: mysqld
+    state: stopped
+    enabled: false
+
+
+- name: 패키지 설치
+  dnf:
+    name: 
+      - httpd
+      - httpd-devel
+      - apr-util
+      - mod_security
+      - webalizer
+      - mod_ssl
+      - redhat-rpm-config
+    state: present 
+    update_cache: yes
+
+
+- name: 아파치 설치파일 rsync
+  shell: | 
+    rsync -a {{ SETUP }}::set/config/rocky/httpd.conf /etc/httpd/conf/
+    rsync -a {{ SETUP }}::set/config/rocky/ssl.conf /etc/httpd/conf/
+    rsync -a {{ SETUP }}::set/config/rocky/mime.types /etc/httpd/conf/
+    rsync -a {{ SETUP }}::set/config/rocky/get_count.pl /usr/local/manage_hosting/
+    rsync -a {{ SETUP }}::set/config/rocky/get_count2.pl /usr/local/manage_hosting/
+    rsync -a {{ SETUP }}::set/config/rocky/apachectl /usr/sbin/
+    rsync -a {{ SETUP }}::set/config/rocky/webalizer.conf /etc/
+
+
+- name: 아파치 공통설정
+  block: 
+    - shell: | 
+        cp -a /usr/sbin/apachectl /etc/init.d/httpd
+
+    - file: 
+        src: /etc/init.d/httpd
+        dest: /etc/rc3.d/S99httpd
+        state: link
+
+    - file: 
+        path: /etc/httpd/logs
+        state: absent
+  
+    - file: 
+        src: /web_log
+        dest: /etc/httpd/logs
+        state: link
+
+    - file: 
+        src: /web_log
+        dest: /www/apachelogs
+        state: link
+
+    - file: 
+        state: directory
+        path: /etc/httpd/conf
+        owner: root
+        group: gabia
+        mode: '0750'
+
+    - file: 
+        state: directory
+        path: /etc/httpd
+        owner: root
+        group: root
+        mode: '0751'
+
+    - file: 
+        path: /etc/httpd/conf/vhost
+        state: directory
+        mode: '0755'
+ 
+    - file: 
+        path: /etc/httpd/conf/vhost/dummy.conf
+        state: touch
+  
+    - shell: |
+        rsync -a {{ SETUP }}::set/config/apache2.4/bad_bot.conf /etc/httpd/conf/ 
+
+
+
+    
+

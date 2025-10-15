@@ -1,0 +1,32 @@
+- name: php_screw_plus 설치
+  block:
+    - name: 설치파일 rsync
+      shell: | 
+        rsync -a {{ SETUP }}::set/config/upgrade/php_screw_plus_8.2.tar.gz {{ SRC }}/
+
+    - name: 압축해제
+      unarchive:
+        src: "{{ SRC }}/php_screw_plus_8.2.tar.gz"
+        dest: "{{ SRC }}/"
+        remote_src: yes
+
+    - name: 설치
+      block: 
+        - name: configure 빌드
+          shell: | 
+            /usr/local/php/bin/phpize
+            ./configure --with-php-config=/usr/local/php/bin/php-config
+          args: 
+            chdir: "{{ SRC }}/php_screw_plus"
+          register: configure_result 
+          ignore_errors: false
+       
+        - name: make & make install
+          shell: | 
+            make -j 4 && make install 
+          args: 
+            chdir: "{{ SRC }}/php_screw_plus"
+          when: configure_result.rc == 0 
+
+ 
+    

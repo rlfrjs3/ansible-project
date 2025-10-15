@@ -1,0 +1,30 @@
+- name: mod_geoip 설치
+  block: 
+    - name: GeoIP 데이터베이스 기존 파일 삭제
+      file: 
+        path: /usr/share/GeoIP/GeoIP.dat
+        state: absent
+    
+    - name: GeoIP 데이터베이스 파일 rsync  
+      shell: | 
+        rsync -a {{ SETUP }}::home/GeoIP/GeoIP.dat /usr/share/GeoIP/GeoIP.dat
+
+    - name: 설치파일 rsync
+      shell: | 
+        rsync -a {{ SETUP }}::set/config/apache2.4/geoip-api-mod_geoip2-1.2.10.tar.gz {{ SRC }}/
+
+    - name: 압축해제
+      unarchive:
+        src: "{{ SRC }}/geoip-api-mod_geoip2-1.2.10.tar.gz"
+        dest: "{{ SRC }}/"
+        remote_src: yes
+
+    - name: 설치
+      shell: | 
+        /usr/bin/apxs -i -L/usr/lib64 -I/usr/include -lGeoIP -c mod_geoip.c
+      args:
+        chdir: "{{ SRC }}/geoip-api-mod_geoip2-1.2.10" 
+
+
+ 
+    

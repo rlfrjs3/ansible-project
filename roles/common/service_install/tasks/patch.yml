@@ -1,0 +1,31 @@
+- name: 패치관련 설정
+  block:
+    - name: 방화벽 인바운드 정책 추가
+      blockinfile:
+        path: "/usr/local/manage_hosting/firewall/conf/input_accept.conf"
+        block: | 
+          # patch
+          139.150.65.122           0:      22   tcp
+        marker: ""
+  
+    - name: 패치서버 shopbuilder  공개키 rsync
+      shell: |
+        rsync -a {{ SETUP }}::set/config/patch/.ssh/ /home/shopbuilder/.ssh/
+
+    - name: 소유권 변경
+      block:
+        - name: /home/shopbuilder/.ssh
+          file: 
+            path: /home/shopbuilder/.ssh
+            owner: shopbuilder
+            group: shopbuilder 
+
+        - name: /www/src
+          file: 
+            path: /www/src
+            owner: shopbuilder
+            group: shopbuilder
+  
+
+
+        

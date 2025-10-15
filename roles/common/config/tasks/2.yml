@@ -1,0 +1,33 @@
+- name: ip 변수 등록
+  shell: ifconfig eth0 | grep -w inet | awk '{ gsub("addr:", "" ) ; print $2}'
+  register: ip_addr
+
+- name: ip 변수 확인
+  debug:
+    var: ip_addr.stdout
+
+
+
+
+- name: hosts 파일 설정
+  blockinfile:
+    path: /etc/hosts
+    state: present
+    block: | 
+      127.0.0.1       localhost localhost.localdomain
+      {{ ip_addr.stdout }}     {{ hostname }} {{ hostname }}.firstmall.kr
+    marker: ""
+
+
+- name: resolv.conf 파일 설정
+  blockinfile:
+    path: /etc/resolv.conf
+    state: present
+    block: | 
+      options timeout:1 attempts:1
+      nameserver 127.0.0.1
+      nameserver 164.124.101.2
+      nameserver 168.126.63.1
+    marker: ""
+
+

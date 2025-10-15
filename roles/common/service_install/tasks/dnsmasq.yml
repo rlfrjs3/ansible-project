@@ -1,0 +1,22 @@
+- name: dnsmasq - resolv.conf 설정 추가
+  blockinfile:
+    path: /etc/resolv.conf
+    state: present
+    block: | 
+      options timeout:1 attempts:1
+      nameserver 127.0.0.1
+      nameserver 164.124.101.2
+      nameserver 168.126.63.1
+    marker: ""
+
+
+- name: resolv.conf 파일 chattr
+  shell: |  
+    chattr +i /etc/resolv.conf
+
+- name: dnsmasq 시작
+  systmed: 
+    name: dnsmasq
+    state: started 
+    enabled: yes
+

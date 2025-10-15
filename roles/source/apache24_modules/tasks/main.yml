@@ -1,0 +1,14 @@
+- name: 아파치 모듈 설치
+  block:
+    - name: Install mod_security2
+      import_tasks: mod_security2.yml
+
+    - name: Install mod_define
+      import_tasks: mod_define.yml
+
+    - name: Install mod_cband
+      import_tasks: mod_cband.yml
+  
+    - name: Install mod_geoip
+      import_tasks: mod_geoip.yml
+

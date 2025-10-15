@@ -1,0 +1,49 @@
+---
+- name: 서비스 disabled 설정
+  systemd:
+    name: "{{ item }}"
+    enabled: no
+    state: stopped
+  loop:
+    - auditd.service
+    - dbus-org.fedoraproject.Firewalld1..service
+    - firewalld.service
+    - iptables.service
+    - kdump.service
+    - microcode.service
+    - sm-client.service
+    - atd.service
+    - dm-event.socket
+    - import-state.service
+    - libstoragemgmt.service
+    - loadmodules.service
+    - lvm2-monitor.service
+    - mcelog.service
+    - mdmonitor.service
+    - nis-domainname.service
+    - nvmefc-boot-connections.service
+    - selinux-autorelabel-mark.service
+    - sssd.service
+    - sssd-kcm.socket
+    - systemd-timedated.service
+    - vdo.service
+
+
+
+- name: 서비스 enabled 설정
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  loop:
+    - tuned.service
+    - dnsmasq.service
+    - salt-minion.service
+    - sendmail.service
+    - chronyd.service
+    - xinetd.service
+    - NetworkManager.service
+
+
+
+    

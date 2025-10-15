@@ -1,5 +1,5 @@
 ---
-- name: Firewall Inbound Ruleset 
+- name: 방화벽 인바운드 정책 추가
   hosts: firewall
   user: zlxpf
   become: yes
@@ -28,14 +28,15 @@
 
 
   tasks:
-    - name: add Ruleset
+    - name: 정책 추가
       lineinfile:
         path: "{{ filewall_conf }}"
         line: "\n# {{ comment }}\n{{ ip }}           0:      {{ port }}   {{ protocol }}"
-        create: yes
         backup: yes
         state: present
   
-    - name: firewall restart
-      command: /etc/init.d/firewall restart
+    - name: 방화벽 재시작
+      shell: | 
+        /etc/init.d/firewall restart
+
  

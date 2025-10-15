@@ -1,0 +1,50 @@
+- name: mod_cband 설치
+  block:
+    - name: 설치파일 rsync
+      shell: | 
+        rsync -a {{ SETUP }}::set/app/mod-cband-0.9.7.5.tgz {{ SRC }}/
+
+    - name: 압축해제
+      unarchive:
+        src: "{{ SRC }}/mod-cband-0.9.7.5.tgz"
+        dest: "{{ SRC }}/"
+        remote_src: yes
+
+    - name: 설치파일 rsync_2
+      shell: | 
+        rsync -a {{ SETUP }}::set/config/apache2.4/mod_cband.c {{ SRC }}/mod-cband-0.9.7.5/src/
+
+    - name: 설치
+      shell: | 
+        cd {{ SRC }}/mod-cband-0.9.7.5
+        ./configure --with-apxs=/usr/bin/apxs 
+        make -j 4 && make install 
+
+    - name: cband tmp 디렉터리 생성
+      file: 
+        path: /tmp/CBAND
+        state: directory
+        owner: nobody
+        group: nobody
+        recurse: yes
+
+    - name: 아파치 환경변수 실행파일 작업 
+      block: 
+        - name: 아파치 바이너리 디렉터리 생성
+          file: 
+            path: /etc/httpd/bin
+            state: directory
+        
+        - name: envvars 파일 rsync
+          shell: | 
+            rsync -a {{ SETUP }}::set/config/envvars /etc/httpd/bin/envvars
+     
+    - name: httpd.conf 수정
+      lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '/usr/lib64/httpd/modules/mod_cband.so'
+        state: absent 
+
+  
+  
+  

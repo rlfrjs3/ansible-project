@@ -1,0 +1,63 @@
+- name: comdeny 쉘 
+  block:
+    - name: comdeny.sh rsync
+      shell: | 
+        rsync -a {{ SETUP }}::set/config/rocky/comdeny.sh /root/
+  
+    - name: comdeny.sh 실행(명령어 실행파일 chmod)
+      shell: |
+        sh /root/comdeny.sh 
+
+    - name: comdeny.sh 파일 삭제
+      file: 
+        path: /root/comdeny.sh
+        state: absent 
+
+- name: /etc/profile 설정
+  blockinfile:
+    path: /etc/profile
+    state: present
+    block: | 
+      # ISMS TMOUT
+      TMOUT=3600
+      export TMOUT
+    marker: ""
+
+- name: 필수파일 rsync
+  shell: | 
+    rsync -a {{ SETUP }}::set/config/centos7/daemon_chk_db/ /usr/local/daemon_chk/
+    rsync -a {{ SETUP }}::set/config/db_root_crontab /var/spool/cron/root
+    rsync -a {{ SETUP }}::set/config/rocky/db_crontab /etc/crontab
+
+- name: proftp 서비스 중지 
+  service:
+    name: proftpd
+    state: started
+    enabled: no
+
+- name: firewall 설정 및 재시작
+  block:
+    - name: firewall 설정 rsync
+      shell: | 
+        rsync -a --delete {{ SETUP }}::set/config/rocky/db_firewall/firewall/ /usr/local/manage_hosting/firewall/
+
+    - name: firewall 재시작
+      shell: | 
+        /etc/init.d/firewall restart
+
+- name: 백업 디렉터리 이름 변경
+  shell: |
+    mv /www/mysqlbackup /local_backup
+
+- name: 백업 디렉터리 심볼릭
+  file: 
+    src: /local_backup/mysqlbackup
+    dest: /www/mysqlbackup
+    state: link
+
+- name: rsnapshot.conf rsync
+  shell: | 
+    rsync -a {{ SETUP }}/config/rocky/db_set/rsnapshot.conf /etc/
+
+
+ 

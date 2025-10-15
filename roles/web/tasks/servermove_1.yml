@@ -8,8 +8,8 @@
 
 - name: File rsync
   shell: |
-    rsync -av --exclude=database.php --delete {{ old_web_ip }}::www2/{{ homedir_name }}/ /www/{{ homedir_name }}/ &&
-    rsync -av {{ old_web_ip }}::R/web_log/{{ homedir_name }}/ /web_log/{{ homedir_name }} &&
+    rsync -av --exclude=database.php --delete {{ old_web_ip }}::www2/{{ homedir_name.stdout }}/ /www/{{ homedir_name.stdout }}/ &&
+    rsync -av {{ old_web_ip }}::R/web_log/{{ homedir_name.stdout }}/ /web_log/{{ homedir_name.stdout }} &&
     rsync -av {{ old_web_ip }}::R{{ conf_path.stdout }}{{ domain_name }}.conf {{ conf_path.stdout }}/vhost/{{ domain_name }}.conf 
   delegate_to: "{{ new_web_ip }}"
 
@@ -29,15 +29,15 @@
 
 - name: Chown
   shell: | 
-    user=$(awk -F: -v hd="/www/{{ homedir_name }}" '$6 ~ "^"hd {print $1}' /etc/passwd)
+    user=$(awk -F: -v hd="/www/{{ homedir_name.stdout }}" '$6 ~ "^"hd {print $1}' /etc/passwd)
     if [ -z "$user" ]; then
       echo "Error: 계정명이 확인되지 않음"
       exit 1
     fi
-    find /www/{{ homedir_name }} ! -user {{ account_name.stdout }} -exec chown {{ account_name.stdout }}.mallusers {} \;
-    find /www/{{ homedir_name }} \( -uid +999 -uid -60000 -o -gid +999 -gid -60000 \) -exec chown {{ account_name.stdout }}.mallusers {} \;
-    chown -R nobody.mallusers /www/{{ homedir_name }}/_compile
-    chown -R root.mallusers /web_log/{{ homedir_name }}
+    find /www/{{ homedir_name.stdout }} ! -user {{ account_name.stdout }} -exec chown {{ account_name.stdout }}.mallusers {} \;
+    find /www/{{ homedir_name.stdout }} \( -uid +999 -uid -60000 -o -gid +999 -gid -60000 \) -exec chown {{ account_name.stdout }}.mallusers {} \;
+    chown -R nobody.mallusers /www/{{ homedir_name.stdout }}/_compile
+    chown -R root.mallusers /web_log/{{ homedir_name.stdout }}
   delegate_to: "{{ new_web_ip }}"
 
 

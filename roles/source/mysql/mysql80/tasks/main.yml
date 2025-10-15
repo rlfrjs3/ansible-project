@@ -1,0 +1,196 @@
+- set_fact:
+    MYVER: "8.0.36"
+
+- name: mysql root 패스워드
+  include_vars:
+    file: "/local_backup/ansible-project/roles/source/mysql/vars/password.yml"
+- name: mysql root 패스워드 디버깅
+  debug:
+    var: mysql_root_password
+
+
+
+- name: MySQL 8.0.36 설치
+  block:
+    - name: 패키지 설치
+      dnf:
+        name:
+          - libaio-devel
+        state: present
+        update_cache: yes
+     
+    - name: 유저 생성
+      group: 
+        name: mysql
+        state: present
+
+    - name: 그룹 생성
+      user:
+        name: mysql
+        state: present
+        group: mysql
+        shell: /bin/false
+        create_home: no
+
+    - name: MySQL 설치
+      block: 
+        - name: 설치파일 rsync
+          shell: | 
+            rsync -a {{ SETUP }}::set/config/upgrade/mysql-{{ MYVER }}-linux-glibc2.28-x86_64.tar.xz {{ SRC }}/ 
+
+        - name: 압축해제
+          unarchive:
+            src: "{{ SRC }}/mysql-{{ MYVER }}-linux-glibc2.28-x86_64.tar.xz"
+            dest: "/usr/local/"
+            remote_src: yes
+
+        - name: mysql 디렉터리 이동
+          shell: | 
+            mv /usr/local/mysql-{{ MYVER }}-linux-glibc2.28-x86_64 /usr/local/mysql
+ 
+        - name: mysql 초기화 
+          shell: |
+            /usr/local/mysql/bin/mysqld --no-defaults --basedir=/usr/local/mysql/ --datadir=/usr/local/mysql/data --initialize > /root/mysqlpass 2>&1
+
+        - name: mysql 초기 root 비밀번호 추출
+          shell: |
+            grep generated /root/mysqlpass | awk '{print $13}'
+          register: mysqlpass
+
+        - name: mysql 초기 root 비밀번호 디버깅 출력
+          debug: 
+            var: mysqlpass.stdout
+          
+        - name: mysql 설치 디렉터리 소유권 설정
+          file: 
+            path: /usr/local/mysql
+            owner: root
+            group: mysql
+            recurse: yes
+          
+        - name: mysql 데이터 디렉터리 소유권 설정
+          file:
+            path: /usr/local/mysql/data
+            owner: mysql
+            group: mysql
+            recurse: yes
+       
+        - name: 데이터 rsync
+          shell: | 
+            rsync -a /usr/local/mysql/data/ /data/
+            
+        - name: 원본 데이터 백업
+          shell: |
+            mv /usr/local/mysql/data /usr/local/mysql/data_org
+          
+        - name: 데이터 디렉터리 심볼릭
+          file: 
+            src: /data
+            dest: /usr/local/mysql/data
+            state: link
+
+        - name: my.cnf rsync
+          shell: | 
+            rsync -a {{ SETUP }}::set/config/rocky/db_set/my_8.cnf /etc/my.cnf
+
+        - name: mysql 시작
+          shell: /usr/local/mysql/support-files/mysql.server start
+        
+        - name: mysql 실행 스크립트 복사
+          shell: | 
+            cp -a /usr/local/mysql/support-files/mysql.server /etc/init.d/mysqld
+
+        - name: mysql 실행 스크립트 심볼릭
+          file: 
+            src: /etc/init.d/mysqld
+            dest: /etc/rc3.d/S90mysqld
+            state: link
+      
+        - name: mysql 서비스 등록
+          shell: | 
+            chkconfig --add mysqld
+            chkconfig mysqld on 
+
+          
+
+    - name: mysql 관련 디렉터리 생성 및  소유권 설정
+      block:
+        - name: /www/mysqlbackup
+          file:   
+            state: directory
+            path: /www/mysqlbackup
+            owner: root
+            group: root
+            mode: '0750'
+        
+        - name: /usr/local/mysql/bin/mysqladmin
+          file:
+            state: file
+            path: /usr/local/mysql/bin/mysqladmin
+            owner: root
+            group: gabia
+            mode: '0750'
+      
+        - name: /usr/local/mysql
+          file:
+            state: directory
+            path: /usr/local/mysql
+            owner: root
+            group: mysql
+            mode: '0751'
+      
+        - name: /usr/local/mysql/bin
+          file:
+            state: directory
+            path: /usr/local/mysql/bin
+            owner: root
+            group: mysql
+            mode: '0751'
+
+        - name: /usr/local/mysql/bin/mysqldump
+          file: 
+            state: file
+            path: /usr/local/mysql/bin/mysqldump
+            mode: '0750'
+
+        - name: /etc/my.cnf
+          file: 
+            state: file
+            path: /etc/my.cnf
+            owner: root
+            group: root
+            mode: '0600'
+       
+        - name: /data
+          file: 
+            state: directory
+            path: /data
+            mode: '0755'
+
+    
+
+    - name: mysql 접속 및 초기 사용자&권한 생성
+      block:
+        - name: 패스워드 디버깅
+          debug:
+            var: mysql_root_password
+ 
+        - name: root 비밀번호 설정
+          shell: /usr/local/mysql/bin/mysqladmin -u root -p"{{ mysqlpass.stdout }}" password "{{ mysql_root_password }}"
+        
+        - name: 초기 사용자&권한 설정파일 rsync
+          shell: | 
+            rsync -a {{ SETUP }}::set/config/upgrade/query.sql /root/
+        
+        - name: 초기 사용자&권한 설정 import
+          shell: | 
+            /usr/local/mysql/bin/mysql -uroot -p"{{ mysql_root_password }}" < /root/query.sql
+
+        - name: 사용한 mysql 설정관련 파일 삭제
+          file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - /root/mysqlpass
+            - /root/query.sql
+            - /root/.mysql_history

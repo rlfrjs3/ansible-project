@@ -1,0 +1,51 @@
+- name: php_libzip 설치
+  block:
+    - name: 설치파일 rsync
+      shell: | 
+        rsync -a {{ SETUP }}::set/config/upgrade/libzip-1.10.1.tar.gz {{ SRC }}/
+     
+    - name: 압축해제
+      unarchive:
+        src: "{{ SRC }}/libzip-1.10.1.tar.gz"
+        dest: "{{ SRC }}/"
+        remote_src: yes
+
+    - name: 설 치   
+      block:
+        - name: cmake 빌드
+          shell: |
+            cmake3 -DCMAKE_INSTALL_PREFIX=/usr/local/libzip . 
+          args:
+            chdir: "{{ SRC }}/libzip-1.10.1"
+          register: cmake_result 
+          ignore_errors: false
+       
+        - name: make & make install 
+          shell: | 
+            make -j 4 && make install
+          args:
+            chdir: "{{ SRC }}/libzip-1.10.1"
+          when: cmake_result.rc == 0 
+
+
+        - name: configure 빌드
+          shell: |
+            export PKG_CONFIG_PATH=/usr/local/libzip/lib64/pkgconfig
+            /usr/local/php/bin/phpize
+            ./configure --with-php-config=/usr/local/php/bin/php-config  
+          args: 
+            chdir: "{{ SRC }}/php-{{ PHPVER }}/ext/zip"
+          register: configure_result
+          ignore_errors: false
+      
+        - name: make & make install 
+          shell: | 
+            make -j 4 && make install
+          args: 
+            chdir: "{{ SRC }}/php-{{ PHPVER }}/ext/zip"
+          when: configure_result.rc == 0 
+             
+
+   
+        
+  

@@ -5,8 +5,8 @@
     if [ "{{ account_name.stdout | length }}" -gt 0 ]; then
       userdel -r {{ account_name.stdout | trim }}
     fi 
-    rm -rf /www/{{ homedir_name }}
-    rm -rf /web_log/{{ homedir_name }} && rm -fv {{ conf_path.stdout}}{{ domain_name }}.conf
+    rm -rf /www/{{ homedir_name.stdout }}
+    rm -rf /web_log/{{ homedir_name.stdout }} && rm -fv {{ conf_path.stdout}}{{ domain_name }}.conf
   delegate_to: "{{ old_web_ip }}"
 
 

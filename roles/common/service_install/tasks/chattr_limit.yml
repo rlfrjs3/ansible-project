@@ -1,0 +1,29 @@
+- name: chattr 설정
+  block:
+    - name: root 계정
+        file: 
+          path: /root/.bash_history
+          state: touch
+          owner: root
+          group: root 
+    - shell: |
+        chattr +a /root/.bash_history
+
+    - name: zlxpf 계정
+        file: 
+          path: /home/firefox/.bash_history
+          state: touch
+          owner: zlxpf
+          group: zlxpf
+    - shell: |
+        chattr +a /home/firefox/.bash_history
+
+- name: limit 설정
+  blockinfile:
+    path: /etc/security/limits.conf
+    state: present
+    block: | 
+      *              soft      nofile          65536
+      *              hard     nofile           65536
+    marker: ""
+ 

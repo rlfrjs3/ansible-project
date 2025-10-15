@@ -1,0 +1,49 @@
+- name: php 확장모듈 설정
+  shell : cp -a /usr/local/php/lib/php/extensions/no-debug-non-zts-20220829/* /usr/local/php/lib/php/extensions/
+
+
+- name: php 설정파일 rsync
+  block: 
+    - name: rsync
+      shell: |  
+        rsync -a {{ SETUP }}::set/config/rocky/rpm/httpd.service /usr/lib/systemd/system/httpd.service
+        rsync -a {{ SETUP }}::set/config/apache2.4/php-fpm/phpoff.conf /etc/httpd/conf/
+        rsync -a {{ SETUP }}::set/config/apache2.4/php-fpm/php-fpm.conf /usr/local/php/etc/
+        rsync -a {{ SETUP }}::set/config/apache2.4/php-fpm/php-fpm.service /usr/lib/systemd/system/
+        rsync -a {{ SETUP }}::set/app/cb_namecheck /usr/bin/
+
+    - name: 소유권 설정        
+      file:
+        path: /usr/local/php/bin/php
+        mode: '0700'
+        state: file
+    
+    - name: chattr 설정
+      shell: |
+        chattr +i /etc/httpd/conf/php.ini
+
+
+- name: php 서비스 시작 및 버전 확인
+  block: 
+    - systemd: 
+        daemon_reload: true
+    
+    - systemd:
+        name: httpd
+        enabled: false
+    
+    - shell: |
+        /sbin/apachectl start
+
+    - systemd: 
+        name: php-fpm
+        enabled: true
+        state: started 
+  
+    - name: PHP 버전 확인
+      command: /usr/local/php/bin/php -v 
+      register: php_version
+   
+    - name: PHP 버전 출력
+      debug: 
+        var: php_version.stdout

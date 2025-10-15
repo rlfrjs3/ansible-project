@@ -1,0 +1,21 @@
+- name: 기타 설정
+  block:
+    - name: vi와 명령어 설정
+      shell: | 
+        echo "set background=dark" > /root/.vimrc
+        cp -a /etc/DIR_COLORS /root/.dir_colors
+        sh /root/webinit1.sh
+        rm -f /root/webinit1.sh
+ 
+    - name: tmp 설정
+      block: 
+        - name: 기존 tmp 삭제
+          file: 
+            path: /var/tmp
+            state: absent
+       
+        - name: 심볼릭 생성
+          file:
+            src: /tmp 
+            dest: /var/tmp
+            state: link 

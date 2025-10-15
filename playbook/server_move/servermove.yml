@@ -1,5 +1,5 @@
 ---
-- name : FTP 권한변경(서버이전) playbook
+- name : 웹&DB 서버이전
   hosts: localhost
   user: zlxpf
   become: true
@@ -7,7 +7,7 @@
 
 
   vars:
-    new_web_ip: 121.78.197.53
+    new_web_ip: 121.78.197.97
     new_db_ip: 121.78.197.72
   
   vars_prompt:
@@ -28,16 +28,18 @@
 #공통변수 설정(하위 roles에서 사용)
   tasks:
     - name: 1.homedir_name
-      set_fact:
-        homedir_name: "{{ domain_name | replace('.', '_') | replace('-', '_') }}"
+      shell: |
+        cat /etc/passwd | grep {{ domain_name }} | awk -F ':' '{split($6,a,"/"); print a[3]}'
+      register: homedir_name
+      delegate_to: "{{ old_web_ip }}"
     - name: homedir_name debug
       debug: 
-        var: homedir_name    
+        var: homedir_name.stdout    
 
 
     - name: 2.account_name
       shell: |
-        cat /etc/passwd | grep {{ domain_name }}/data | awk -F ':' '{print $1}' 
+        cat /etc/passwd | grep {{ homedir_name.stdout }}/data | awk -F ':' '{print $1}' 
       register: account_name
       delegate_to: "{{ old_web_ip }}"
     - name: account_name debug
@@ -67,10 +69,8 @@
         echo "$count"
         echo "$ssl_domain"
         echo "$ssl_account"
-
       register: ssl_info
       delegate_to: "{{ new_web_ip }}"
-     
     - name: SSL debug
       debug: 
         var: ssl_info.stdout_lines
@@ -79,6 +79,7 @@
     - name: 5.DB root password
       include_vars:
         file: /etc/ansible/roles/db/vars/password.yml
+
 
 
 #roles 파일 (순차적으로 실행)

@@ -1,0 +1,57 @@
+- name: HASP setting
+  import_tasks: hasp.yml
+
+- name: Proftpd setting
+  import_tasks: proftpd.yml
+  
+- name: Clamav setting
+  import_tasks: clamav.yml
+
+- name: Quota setting
+  import_tasks: quota.yml
+
+- name: rsnapshot setting
+  import_tasks: rsnapshot.yml
+
+- name: sendmail setting
+  import_tasks: sendmail.yml
+
+- name: firewall setting
+  import_tasks: firewall.yml
+
+- name: patch setting
+  import_tasks: patch.yml
+
+- name: Ansible setting
+  import_tasks: ansible.yml
+
+- name: sudo setting
+  import_tasks: sudoers.yml
+
+- name: PAM setting
+  import_tasks: pam.yml
+
+- name: Chattr & limit setting
+  import_tasks: chattr_limit.yml
+
+- name: Dnsmasq setting
+  import_tasks: dnsmasq.yml
+
+- name: Saltstack setting
+  import_tasks: salt.yml
+
+- name: Certbot setting
+  import_tasks: certbot.yml
+
+- name: Disk setting
+  import_tasks: disk.yml
+
+- name: Filebeat setting
+  import_tasks: filebeat.yml
+
+- name: 기타 setting
+  import_tasks: extra.yml
+
+- name: Zabbix-agent setting
+  import_tasks: zabbit.yml
+

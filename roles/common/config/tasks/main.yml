@@ -1,0 +1,17 @@
+- name: OS 기본셋팅
+  block:
+    - name: 계정 & 호스트네임 셋팅
+      import_tasks: 1.yml 
+
+    - name: hosts & resolv.conf 설정
+      import_tasks: 2.yml
+    
+    - name: Selinux & 언어셋 & 시간동기화 설정
+      import_tasks: 3.yml
+
+    - name: 필수패키지 설치
+      import_tasks: 4.yml
+  
+    - name: 필수파일 rsync
+      import_tasks: 5.yml
+

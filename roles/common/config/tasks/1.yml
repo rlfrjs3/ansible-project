@@ -1,0 +1,56 @@
+- name: 그룹 생성
+  group:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - gabia
+    - mallusers
+
+
+
+- name: zlxpf 유저 생성
+  user: 
+    name: zlxpf
+    group: gabia
+    shell: /bin/bash
+    home: /home/firefox
+    create_home: yes
+
+- name: shopbuilder 유저 생성
+  user:
+    name: shopbuilder
+    groups: "mallusers,gabia"
+    shell: /bin/bash
+    create_home: yes
+
+
+
+- name: zlxpf, shopbuilder, root 패스워드 설정
+  shell: | 
+    echo "{{ shoppass }}" | passwd -stdin shopbuilder
+    echo "{{ zlxpfpass }}" | passwd -stdin zlxpf
+    echo "{{ rootpass }}" | passwd -stdin root
+  args:
+    executable: /bin/bash
+
+
+
+- name: 불필요 계정 삭제
+  user: 
+    name: "{{ item }}"
+    state: absent 
+  loop:
+    - adm
+    - lp
+    - games
+    - ftp
+    - syn
+    - operator
+
+
+
+- name: 호스트네임 셋팅
+  hostname:
+    name: "{{ hostname }}"
+    use: systemd
+

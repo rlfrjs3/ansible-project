@@ -1,0 +1,7 @@
+- name: firewall 실행 스크립트 rsync
+  shell: | 
+    rsync -a {{ SETUP }}::set/config/firewall /etc/init.d/firewall
+
+- name: firewall 재시작
+  shell: |
+    /etc/init.d/firewall restart 

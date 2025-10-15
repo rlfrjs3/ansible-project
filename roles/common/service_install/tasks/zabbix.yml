@@ -1,0 +1,44 @@
+- name: zabbix rsync
+  shell: | 
+    rsync -a {{ SETUP }}::set/config/zabbix/client/zabbix-agent-4.4.8-1.el8.x86_64.rpm {{ SRC }}/
+
+- name: zabbix install
+  yum:
+    name: "{{ SRC }}/zabbix-agent-4.4.8-1.el8.x86_64.rpm"
+    state: present
+
+- name: zabbix systemd rsync
+  shell: | 
+    rsync -a {{ SETUP }}::set/config/zabbix/client/zabbix-agent.service /usr/lib/systemd/system/
+
+- name: zabbix etc rsync
+  shell: | 
+    rsync -a {{ SETUP }}::set/config/zabbix/client/etc/ /etc/zabbix/
+
+- name: 소유권 변경
+  file:
+    path: /var/log/zabbix
+    state: directory
+    owner: zabbix
+    group: zabbix
+    mode: "0700"
+
+- name: sudoers 설정
+  lineinfile:
+    path: /etc/sudoers
+    state: present
+    line: "zabbix     ALL= NOPASSWD: /etc/zabbix/script/*"
+
+- name: 로그 설정
+  lineinfile:
+    path: /etc/sudoers.d/99-zabbix-no-log
+    state: present
+    line: "Defaults:zabbix !pam_session, !syslog"
+
+- name: zabbix 서비스 시작
+  systemd:
+    name: zabbix-agent
+    state: started 
+    enabled: yes 
+
+  

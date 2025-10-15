@@ -1,0 +1,33 @@
+- name: comdeny 쉘 
+  block:
+    - name: comdeny.sh rsync
+      shell: | 
+        rsync -a {{ SETUP }}::set/config/rocky/comdeny.sh /root/
+  
+    - name: comdeny.sh 실행(명령어 실행파일 chmod)
+      shell: |
+        sh /root/comdeny.sh 
+
+    - name: comdeny.sh 파일 삭제
+      file: 
+        path: /root/comdeny.sh
+        state: absent 
+
+
+- name: /etc/profile 설정
+  blockinfile:
+    path: /etc/profile
+    state: present
+    block: | 
+      # ISMS TMOUT
+      TMOUT=3600
+      export TMOUT
+    marker: ""
+
+
+- name: 필수파일 rsync
+  shell: | 
+    rsync -a {{ SETUP }}::set/config/rocky/daemon_chk/ /usr/local/daemon_chk/
+    rsync -a {{ SETUP }}::set/config/rocky/root_crontab /var/spool/cron/root
+    rsync -a {{ SETUP }}::set/config/rocky/crontab /etc/crontab
+

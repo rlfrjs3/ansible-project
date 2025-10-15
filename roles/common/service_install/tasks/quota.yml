@@ -1,0 +1,13 @@
+- name: Quota 설치
+  block: 
+    - name: /www 마운트
+      mount: 
+        path: /www
+        opts: defaults,usrquota,grpquota
+        state: mounted
+        remount: yes
+
+    - name: 쿼터 체크 및 활성화
+      shell: | 
+        quotacheck -avfugm
+        quotaon /www

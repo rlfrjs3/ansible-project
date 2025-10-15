@@ -3,7 +3,7 @@
 
 - name: passwd EDIT
   shell: | 
-    usermod -d /www/{{ homedir_name }} {{ account_name.stdout | trim }} &&
+    usermod -d /www/{{ homedir_name.stdout }} {{ account_name.stdout | trim }} &&
     usermod -s /bin/bash {{ account_name.stdout | trim }} 
   when: account_name.stdout_lines | length > 0
   delegate_to: "{{ new_web_ip }}"

@@ -1,0 +1,68 @@
+- name: 디스크 체크 쉘 rsync  및 하드웨어 패키지 설치 
+  block: 
+    - name: 모델명 확인
+      shell: |  
+        /usr/sbin/dmidecode -t 1 | grep -i "product name" | awk '{print $5}'
+      register: MODEL
+    - name: 모델명 변수 확인
+      debug: 
+        vars: MODEL.stdout
+
+ 
+    - name: Gen10일 경우 작업
+      block:
+        - name: 디스크 체크 쉘 rsync
+          shell: |
+            rsync -a {{ SETUP }}::set/config/diskcheck.sh /home/diskchk/
+        
+        - name: 하드웨어 패키지 rsync
+          shell: |
+            rsync -a {{ SETUP }}::set/app/hpgen10.rpm {{ SRC }}/
+        
+        - name: 하드웨어 패키지 설치
+          yum:
+            name: "{{ SRC }}/hpgen10.rpm"
+            state: present
+
+        - name: 설치 후 설치파일은 삭제
+          file: 
+            path: "{{ SRC }}/hpgen10.rpm"
+            state: absent 
+        
+        - name: 명령어 심볼릭
+          file: 
+            src: /usr/sbin/ssacli
+            dest: /usr/sbin/hpssacli
+            state: link
+
+      when: MODEL.stdout | trim  == "Gen10"
+      
+
+   
+
+
+    - name: Gen10이 아닐경우 작업
+      block: 
+        - name: 디스크 체크 쉘 rsync
+          shell: |
+            rsync -a {{ SETUP }}::set/config/diskcheck_old.sh /home/diskchk/
+          
+        - name: 디스크 체크 쉘 이름변경
+          shell: |
+            mv /home/diskchk/diskcheck_old.sh /home/diskchk/diskcheck.sh
+
+        - name: 하드웨어 패키지 rsync
+          shell: |
+            rsync -a {{ SETUP }}::set/app/hpgen9.rpm {{ SRC }}/
+       
+        - name: 하드웨어 패키지 설치
+          yum:
+            name: "{{ SRC }}/hpgen9.rpm"
+            state: present
+         
+        - name: 설치 후 설치파일은 삭제
+          file: 
+            path: "{{ SRC }}/hpgen9.rpm"
+            state: absent 
+
+      when: MODEL.stdout | trim  != "Gen10"

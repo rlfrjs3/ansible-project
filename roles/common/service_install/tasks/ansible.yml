@@ -1,0 +1,18 @@
+- name: Ansible 셋팅
+  block: 
+    - name: Ansible 서버 SSH 공개키 등록
+      authorized_key:
+        user: zlxpf
+        state: present 
+        key: "{{ ansible_pubkey }}"
+        manage_dir: yes
+       
+    - name: Ansible sudo 설정
+      lineinfile: 
+        path: /etc/sudoers
+        state: present
+        line: "zlxpf    ALL=(ALL)       NOPASSWD: ALL"
+    
+    - name: PyMysql 패키지 설치
+      shell: | 
+        pip3 install PyMysql

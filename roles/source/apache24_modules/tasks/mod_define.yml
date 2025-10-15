@@ -1,0 +1,19 @@
+- name: mod_define 설치
+  block:
+    - name: 설치파일 rsync 
+      shell: | 
+        rsync -a {{ SETUP }}::set/app/mod_define.tgz {{ SRC }}/
+
+    - name: 압축해제
+      unarchive:
+        src: "{{ SRC }}/mod_define.tgz"
+        dest: "{{ SRC }}/"
+        remote_src: yes
+
+    - name: 설치
+      shell: |
+        /usr/bin/apxs -ic mod_define.c
+      args:
+        chdir: "{{ SRC }}/mod_define"
+
+    

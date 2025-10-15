@@ -1,0 +1,33 @@
+- name: SELinux 비활성화
+  selinux:
+    policy: targeted
+    state: disabled
+
+
+
+- name: 언어셋 설정
+  lineinfile:
+    path: /etc/locale.conf
+    regexp: '^LANG='
+    line: 'LANG=ko_KR.UTF-8'
+    state: present
+
+
+
+- name: 시간동기화
+  block:
+    - name: 타임존 셋팅
+      timezone:
+        name: Asia/Seoul 
+ 
+    - name: chrony.conf rsync
+      shell: | 
+        rsync -a {{ SETUP }}::set/config/rocky/chrony.conf /etc/chrony.conf
+
+    - name: chrony 동기화
+      shell: |
+        clock -w 
+        systemctl restart chronyd
+
+
+

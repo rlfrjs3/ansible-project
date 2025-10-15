@@ -1,0 +1,33 @@
+- name: php_mcrypt 설치
+  block:
+    - name: 설치파일 rsync
+      shell: | 
+        rsync -a  {{ SETUP }}::set/config/upgrade/mcrypt-1.0.6.tgz {{ SRC }}/
+
+    - name: 압축해제
+      unarchive:
+        src: "{{ SRC }}/mcrypt-1.0.6.tgz"
+        dest: "{{ SRC }}/"
+        remote_src: yes
+
+    - name: 설치
+      block:
+        - name: configure 빌드
+          shell: | 
+            /usr/local/php/bin/phpize
+            ./configure --with-php-config=/usr/local/php/bin/php-config
+          args:
+            chdir: "{{ SRC }}/mcrypt-1.0.6"
+          register: configure_result 
+          ignore_errors: false
+      
+        - name: make & make install
+          shell: |
+            make -j 4 && make install 
+          args:
+            chdir: "{{ SRC }}/mcrypt-1.0.6"
+          when: configure_result.rc == 0 
+
+
+ 
+    

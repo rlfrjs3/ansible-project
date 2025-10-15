@@ -1,0 +1,54 @@
+---
+- name: 다국어 DB서버 MySQL 8.0
+  hosts: firewall
+  become: yes
+  become_method: sudo
+  vars:
+    role_path: "/local_backup/ansible-project/roles"
+    SETUP: "121.78.114.175"
+    SRC: "/usr/local/src"
+    
+  vars_prompt:
+    - name: "hostname"
+      prompt: "호스트네임을 입력하세요: "
+      private: no
+ 
+    - name: "shoppass"
+      prompt: "shopbuilder 패스워드를 입력하세요: "
+      private: yes
+
+    - name: "zlxpfpass"
+      prompt: "zlxpf 패스워드를 입력하세요: "
+      private: yes
+
+    - name: "rootpass"
+      prompt: "root 패스워드를 입력하세요: "
+      private: yes
+        
+  
+
+
+### 의존성 영향있기 때문에 순서대로 진행###
+
+#OS 기본셋팅(공통)
+  roles:
+    - role: "{{ role_path }}/common/config"
+    - role: "{{ role_path }}/common/service_install"
+    - role: "{{ role_path }}/common/service_onoff"
+
+#MySQL 8.0  설치
+    - role: "{{ role_path }}/source/mysql/mysql80"
+
+#기타 설정 (comdeny, /etc/profile, cron)
+    - role: "{{ role_path }}/common/default/db"
+
+
+
+
+
+
+
+
+
+
+   

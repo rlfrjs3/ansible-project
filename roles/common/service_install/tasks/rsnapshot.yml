@@ -1,0 +1,18 @@
+- name: rsnapshot.conf rsync 
+  shell: | 
+    rsync -a {{ SETUP }}::set/config/rsnapshot.conf /etc/
+
+- name: exclude rsync
+  shell: | 
+    rsync -a {{ SETUP }}::set/config/exclude /local_backup/snapshots/
+
+- name: create backup directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /local_backup/backup
+    - /local_backup/backup_logs
+    - /local_backup/snapshots
+     

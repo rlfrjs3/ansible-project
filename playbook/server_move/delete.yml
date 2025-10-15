@@ -1,5 +1,5 @@
 ---
-- name : 기존서버 삭제  playbook
+- name : 기존서버 데이터삭제
   hosts: localhost
   user: zlxpf
   become: true
@@ -23,15 +23,17 @@
 #공통변수 설정(하위 roles에서 사용)
   tasks:
     - name: 1.homedir_name 
-      set_fact:
-        homedir_name: "{{ domain_name | replace('.', '_') | replace('-', '_') }}"
+      shell: | 
+        cat /etc/passwd | grep {{ domain_name }} | awk -F ':' '{split($6,a,"/"); print a[3]}'
+      register: homedir_name
+      delegate_to: "{{ old_web_ip }}"
     - name: homedir_name debug
       debug: 
-        var: homedir_name
+        var: homedir_name.stdout
 
 
     - name: 2.account_name
-      shell: "awk -F: '$6 == \"/www/{{ homedir_name }}/data\" {print $1}' /etc/passwd"
+      shell: "awk -F: '$6 == \"/www/{{ homedir_name.stdout }}/data\" {print $1}' /etc/passwd"
       register: account_name
       delegate_to: "{{ old_web_ip }}"
     - name: account_name debug
@@ -59,7 +61,6 @@
         ssl_domain=$(grep -w ServerName {{ conf_path.stdout }}{{ domain_name }}.conf | grep -v "firstmall.kr" | awk '{print $2}')
         echo "$count"
         echo "$ssl_domain"
-
       register: ssl_info
       delegate_to: "{{ old_web_ip }}"
     - name: ssl_info debug
@@ -70,6 +71,7 @@
     - name: DB root 비밀번호
       include_vars:
         file: /etc/ansible/roles/db/vars/password.yml
+
 
 
 #roles 파일 (순차적으로 실행)

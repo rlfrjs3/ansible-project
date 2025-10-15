@@ -1,0 +1,104 @@
+- set_fact:
+    PHPVER: "8.2.16"
+
+
+- name: PHP 설치 사전작업
+  block: 
+    - name: libjpeg.so 심볼릭
+      file:
+        src: /usr/lib64/libjpeg.so
+        dest: /usr/lib/libjpeg.so
+        state: link
+
+    - name: libpng.so 심볼릭
+      file:
+        src: /usr/lib64/libpng.so
+        dest: /usr/lib/libpng.so
+        state: link
+
+    - name: fd size 변환 
+      replace:
+        path: /usr/include/bits/typesizes.h
+        regexp: '1024'
+        replace: '4096'
+     
+    - name: 패키지 설치 
+      dnf:
+        name: 
+          - sqlite-devel
+          - libicu-devel
+          - oniguruma-devel
+          - cmake3
+        state: present
+        update_cache: yes
+       
+
+- name: PHP-FPM 설치
+  block:
+    - name: 설치파일 rsync
+      shell: | 
+        rsync -a {{ SETUP }}::set/config/upgrade/php-{{ PHPVER }}.tar.gz {{ SRC }}/
+
+    - name: 압축해제
+      unarchive:
+        src: "{{ SRC }}/php-{{ PHPVER }}.tar.gz"
+        dest: "{{ SRC }}/"
+        remote_src: yes
+
+    - name: php fd size 수정
+      blockinfile:
+        path: "{{ SRC }}/php-{{ PHPVER }}/main/php.h"
+        block: | 
+          #undef __FD_SETSIZE
+          #define __FD_SETSIZE 4096
+          #undef FD_SETSIZE
+          #define FD_SETSIZE 4096 
+        marker: ""  #앤서블 자동 마커 제거
+
+    - name: 설치
+      block:
+        - name: 소스 컴파일 confgiure
+          shell: >
+            ./configure --prefix=/usr/local/php
+            --enable-fpm 
+            --with-config-file-path=/etc/httpd/conf 
+            --enable-mysqlnd 
+            --with-pdo-mysql=mysqlnd 
+            --with-mysqli=mysqlnd 
+            --disable-debug 
+            --enable-sigchild  
+            --enable-sysvsem 
+            --enable-sysvshm 
+            --enable-bcmath 
+            --enable-ftp 
+            --enable-sockets 
+            --enable-exif 
+            --with-zlib-dir=/usr 
+            --with-zlib 
+            --enable-gd 
+            --with-jpeg 
+            --with-freetype 
+            --with-iconv 
+            --enable-mbstring 
+            --with-curl 
+            --enable-soap 
+            --with-openssl 
+            --with-pear 
+            --enable-fd-setsize=4096
+          args:
+            chdir: "{{ SRC }}/php-{{ PHPVER }}" 
+          register: configure_result
+          ignore_errors: false
+ 
+        - name: make & make install
+          shell: | 
+            make -j 4 && make install
+          args: 
+            chdir: "{{ SRC }}/php-{{ PHPVER }}"
+          when: configure_result.rc == 0
+
+    
+    - name: php.ini rsync
+      shell: | 
+        rsync -a {{ SETUP }}::set/config/upgrade/php.ini /etc/httpd/conf/
+

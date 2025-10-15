@@ -1,0 +1,20 @@
+- set_fact:
+    PHPVER: "8.2.16"
+
+
+- name: PHP 모듈 설치
+  block:
+    - name: Install php_libzip
+      import_tasks: libzip.yml
+
+    - name: Install php_mcrypt
+      import_tasks: mcrypt.yml
+
+    - name: Install php_screw_plus
+      import_tasks: screw_plus.yml
+  
+    - name: Install php_imagick
+      import_tasks: imagick.yml
+
+    - name: Install php_runkit
+      import_tasks: runkit.yml

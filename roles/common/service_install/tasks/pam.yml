@@ -1,0 +1,12 @@
+- name: access.conf PAM 셋팅
+  blockinfile:
+    path: /etc/security/access.conf
+    state: present
+    block: | 
+      + : ALL EXCEPT zlxpf shopbuilder : ALL
+      + : zlxpf : 106.246.242.226 121.78.114.12
+      + : shopbuilder : 106.246.242.226 139.150.65.122
+      - : ALL : ALL
+    marker: ""
+
+

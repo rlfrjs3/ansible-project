@@ -1,0 +1,7 @@
+- name: mod_security2 설정파일 rsync
+  shell:
+    rsync -a {{ SETUP }}::set/config/modsecurity/ /etc/httpd/conf/modsecurity/
+  
+
+
+  

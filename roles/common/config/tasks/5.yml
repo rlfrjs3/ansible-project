@@ -1,0 +1,62 @@
+- name: 필수 디렉터리 생성
+  block:
+    - name: /local_backup 생성
+      file: 
+        path: /local_backup
+        state: directory
+
+    - name: /www 생성
+      file:
+        path: /www
+        state: directory
+
+
+
+- name: 필수 파일 rsync  
+  shell: | 
+    rsync -a {{ SETUP }}::set/config/httpd/ /home/httpd/
+    rsync -a {{ SETUP }}::set/config/Admin/ /www/Admin/
+    rsync -a {{ SETUP }}::set/config/check_mail/ /usr/local/check_mail/
+    rsync -a {{ SETUP }}::set/config/ssl_firstmall/ /www/ssl_firstmall/
+    rsync -a {{ SETUP }}::set/config/root_crontab /var/spool/cron/root
+    rsync -a {{ SETUP }}::set/config/rocky/crontab /etc/crontab
+    rsync -a {{ SETUP }}::set/config/rocky/src/ /www/src/
+    rsync -a {{ SETUP }}::set/config/rocky/sshd_config /etc/ssh/sshd_config
+    rsync -a {{ SETUP }}::set/config/rocky/syslog /etc/logrotate.d/syslog
+    rsync -a {{ SETUP }}::set/config/rocky/profile /etc/profile
+    rsync -a {{ SETUP }}::set/config/rocky/rsyslog.conf /etc/rsyslog.conf
+    rsync -a {{ SETUP }}::set/config/motd /etc/motd
+    rsync -a {{ SETUP }}::set/config/rocky/rc.local /etc/rc.d/rc.local
+    rsync -a {{ SETUP }}::set/config/rocky/webinit1.sh /root/
+    rsync -a {{ SETUP }}::set/config/rocky/manage_hosting/ /usr/local/manage_hosting/
+    rsync -a {{ SETUP }}::set/config/bashrc /root/.bashrc
+    rsync -a {{ SETUP }}::set/config/history.sh /etc/profile.d/history.sh
+    rsync -a {{ SETUP }}::set/config/cron.allow /etc/
+    rsync -a {{ SETUP }}::set/config/rsyncd.conf /etc/
+    rsync -a {{ SETUP }}::set/config/rsync /etc/xinetd.d/rsync
+    rsync -a {{ SETUP }}::set/config/sysctl.conf /etc/sysctl.conf
+    rsync -a {{ SETUP }}::set/config/cmd_logging.sh /etc/profile.d/cmd_logging.sh
+    rsync -a {{ SETUP }}::set/config/pam.d_sshd /etc/pam.d/sshd 
+
+
+- name: /etc/pam.d/crond 파일 수정
+  shell: 
+    sed -i 's|required   pam_access.so|sufficient   pam_access.so|g' /etc/pam.d/crond
+    /bin/sed -i 's/PASS_MIN_LEN     5/PASS_MIN_LEN  8/g' /etc/login.defs
+
+
+- name: SSH, rsyslog 재시작
+  block:
+    - name: SSH 재시작 
+      systemd: 
+        name: sshd
+        state: restarted
+
+    - name: rsyslog 재시작
+      systemd: 
+        name: rsyslog
+        state: restarted
+
+    - name: sysctl 설정 적용
+      sysctl:
+        reload: yes
