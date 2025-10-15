@@ -1,6 +1,6 @@
 ---
 - name: 다국어 DB서버 MySQL 8.0
-  hosts: firewall
+  hosts: setting
   become: yes
   become_method: sudo
   vars:

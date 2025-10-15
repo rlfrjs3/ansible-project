@@ -109,6 +109,6 @@ ansible_user=zlxpf
 [sanencheong]
 103.55.190.200
 
-[firewall]
+[setting]
 121.78.197.103 ansible_python_interpreter=/usr/bin/python3 
 

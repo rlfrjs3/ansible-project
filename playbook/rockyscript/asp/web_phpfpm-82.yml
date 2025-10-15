@@ -1,6 +1,6 @@
 ---
 - name: 다국어 웹서버 PHP-FPM 8.2 
-  hosts: firewall
+  hosts: setting
   become: yes
   become_method: sudo
   vars:
