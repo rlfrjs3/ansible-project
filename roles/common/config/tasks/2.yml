@@ -7,8 +7,6 @@
     var: ip_addr.stdout
 
 
-
-
 - name: hosts 파일 설정
   blockinfile:
     path: /etc/hosts

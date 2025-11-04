@@ -7,32 +7,40 @@
     - mallusers
 
 
-
 - name: zlxpf 유저 생성
   user: 
     name: zlxpf
     group: gabia
     shell: /bin/bash
     home: /home/firefox
-    create_home: yes
+    password_expire_max: 180
+    password_expire_warn: 30 
+
 
 - name: shopbuilder 유저 생성
   user:
     name: shopbuilder
-    groups: "mallusers,gabia"
+    groups: mallusers,gabia
     shell: /bin/bash
-    create_home: yes
+    home: /home/shopbuilder
+    password_expire_max: 180
+    password_expire_warn: 30 
 
+
+- name: root 패스워드 정책 설정
+  user: 
+    name: root
+    password_expire_max: 180
+    password_expire_warn: 30
 
 
 - name: zlxpf, shopbuilder, root 패스워드 설정
   shell: | 
-    echo "{{ shoppass }}" | passwd -stdin shopbuilder
-    echo "{{ zlxpfpass }}" | passwd -stdin zlxpf
-    echo "{{ rootpass }}" | passwd -stdin root
+    echo "{{ shoppass }}" | passwd --stdin shopbuilder
+    echo "{{ zlxpfpass }}" | passwd --stdin zlxpf
+    echo "{{ rootpass }}" | passwd --stdin root
   args:
     executable: /bin/bash
-
 
 
 - name: 불필요 계정 삭제
@@ -46,7 +54,6 @@
     - ftp
     - syn
     - operator
-
 
 
 - name: 호스트네임 셋팅
