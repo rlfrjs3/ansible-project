@@ -1,0 +1,124 @@
+---
+- name: Run Select query and save to CSV
+  hosts: firstmall_multi_gwmart_server
+  user: zlxpf
+  become: yes
+  gather_facts: false
+  vars:
+    ansible_remote_tmp: /tmp
+    ansible_python_interpreter: /usr/bin/python3
+    mysql_user: root
+    mysql_password: "tyvldahftkdjqqn!#%&"
+    mysql_bin: /usr/local/mysql/bin/mysql
+    mysql_extra_args: "--default-auth=mysql_native_password --ssl-mode=DISABLED"
+#    exclude_dbs:
+#      - mysql
+#      - sys
+#      - information_schema
+#      - performance_schema
+    select_query: >
+        SELECT (SELECT `value` as domain FROM `fm_config` WHERE `codecd` LIKE 'subDomain' LIMIT 1) as subdomain, (SELECT `value` as domain FROM `fm_config` WHERE `groupcd` = 'system' and `codecd` LIKE 'domain' LIMIT 1) as domain, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='realnamephoneSikey' LIMIT 1) as realnamephoneSikey, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='realnamePhoneSipwd' LIMIT 1) as realnamePhoneSipwd, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='useRealnamephone' LIMIT 1) as useRealnamephone, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='useRealnamephone_dormancy' LIMIT 1) as useRealnamephone_dormancy, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='ipinSikey' LIMIT 1) as ipinSikey, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='ipinKeyString' LIMIT 1) as ipinKeyString, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='useIpin' LIMIT 1) as useIpin, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='useIpin_dormancy' LIMIT 1) as useIpin_dormancy;
+
+  tasks:
+    - name: Get user-created database names
+      command: >
+        {{ mysql_bin }}
+        {{ mysql_extra_args }}
+        -N -u{{ mysql_user }} {% if mysql_password != "" %}-p{{ mysql_password }}{% endif %}
+        -e "SELECT table_schema FROM information_schema.tables WHERE table_name = 'fm_config';"
+      register: db_list
+      changed_when: false
+
+    - name: Save DB names to fact
+      set_fact:
+        db_names: "{{ db_list.stdout_lines | unique }}"
+
+    - name: Run SELECT query in each DB
+      loop: "{{ db_names }}"
+      loop_control:
+        loop_var: db
+      community.mysql.mysql_query:
+        login_user: "{{ mysql_user }}"
+        login_password: "{{ mysql_password }}"
+        login_db: "{{ db }}"
+        login_unix_socket: /tmp/mysql.sock
+        query: "{{ select_query }}"
+      register: query_result
+      failed_when: false
+      changed_when: false
+      ignore_errors: true
+
+    - name: Remove existing CSV file
+      ansible.builtin.file:
+        path: "/tmp/dbquery_{{ inventory_hostname }}.csv"
+        state: absent
+
+    - name: Process query results and generate CSV data
+      ansible.builtin.set_fact:
+        csv_data: "{{ csv_data | default([]) + [processed_row] }}"
+      vars:
+        processed_row: |
+          {%- if item.query_result is defined and item.query_result[0] | length > 0 -%}
+            {%- set row_dict = {'hostname': inventory_hostname, 'database': item.db} -%}
+            {%- for key, value in item.query_result[0][0].items() -%}
+              {%- set _ = row_dict.update({key: (value | string)}) -%}
+            {%- endfor -%}
+            {{ row_dict }}
+          {%- else -%}
+            {{ {'hostname': inventory_hostname, 'database': item.db, 'error': 'QUERY_FAILED'} }}
+          {%- endif -%}
+      loop: "{{ query_result.results }}"
+      loop_control:
+        loop_var: item
+
+    - name: Extract all unique column names
+      ansible.builtin.set_fact:
+        temp_columns: "{{ temp_columns | default([]) | union(item.keys() | list) }}"
+      loop: "{{ csv_data }}"
+      loop_control:
+        loop_var: item
+
+    - name: Set column order with fixed sequence
+      ansible.builtin.set_fact:
+        all_columns: "{{ fixed_order + remaining_columns }}"
+      vars:
+#        fixed_order: ['hostname', 'database', 'GABIAID', 'shopsno', 'subdomain']
+        fixed_order: ['hostname', 'database']
+        remaining_columns: "{{ (temp_columns | difference(fixed_order + ['error'])) | sort + (['error'] if 'error' in temp_columns else []) }}"
+
+    - name: Generate CSV content with all columns
+      ansible.builtin.set_fact:
+        csv_content: |
+          {{ all_columns | join(',') }}
+          {% for row in csv_data %}
+          {%- set row_values = [] -%}
+          {%- for col in all_columns -%}
+            {%- set col_value = row[col] | default('NULL') -%}
+            {%- if col_value == 'NULL' or col_value is none -%}
+              {%- set _ = row_values.append('NULL') -%}
+            {%- else -%}
+              {%- set _ = row_values.append('"' + (col_value | string | replace('"', '""')) + '"') -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {{ row_values | join(',') }}
+          {% endfor %}
+
+    - name: Write dynamic CSV file
+      ansible.builtin.copy:
+        content: "{{ csv_content }}"
+        dest: "/home/firefox/dbquery_{{ inventory_hostname }}.csv"
+        mode: '0644'
+
+    - name: Display CSV file location
+      ansible.builtin.debug:
+        msg: "CSV file saved to: /home/firefox/dbquery_{{ inventory_hostname }}.csv"
+
+    - name: Show CSV preview
+      ansible.builtin.command:
+        cmd: head -n 10 /home/firefox/dbquery_{{ inventory_hostname }}.csv
+      register: csv_preview
+      changed_when: false
+
+    - name: Display CSV preview
+      ansible.builtin.debug:
+        msg: "{{ csv_preview.stdout_lines }}"

@@ -1,0 +1,13 @@
+---
+- name: js monitor shell modify
+  hosts: firstmall_multi_gcloud_patch_n
+  become: true
+  become_method: sudo 
+  user: zlxpf
+  
+
+  tasks:
+
+    - name: 삭제
+      shell: |
+        sed -i '46d; 24d' /usr/local/manage_hosting/js_monitor.sh

@@ -16,15 +16,20 @@
 
 - name: freeSSL rsync
   shell: |
-    if [ "{{ ssl_info.stdout_lines[0] }}" -gt 0  ]; then
-      rsync -av {{ old_web_ip }}::R/etc/letsencrypt/archive/{{ ssl_info.stdout_lines[1] }}/ /etc/letsencrypt/archive/{{ ssl_info.stdout_lines[1] }}
-      rsync -av {{ old_web_ip }}::R/etc/letsencrypt/live/{{ ssl_info.stdout_lines[1] }}/ /etc/letsencrypt/live/{{ ssl_info.stdout_lines[1] }}
-      rsync -av {{ old_web_ip }}::R/etc/letsencrypt/renewal/{{ ssl_info.stdout_lines[1] }}.conf /etc/letsencrypt/renewal/{{ ssl_info.stdout_lines[1] }}.conf
-      /bin/sed -i "/^account =/c\account = {{ ssl_info.stdout_lines[2] }}" /etc/letsencrypt/renewal/{{ ssl_info.stdout_lines[1] }}.conf
-    else
-      echo "무료SSL 도메인이 확인되지 않습니다."
-    fi
+      rsync -av {{ old_web_ip }}::R/etc/letsencrypt/archive/{{ old_ssl_info.stdout_lines[1] }}/ /etc/letsencrypt/archive/{{ old_ssl_info.stdout_lines[1] }}
+      rsync -av {{ old_web_ip }}::R/etc/letsencrypt/live/{{ old_ssl_info.stdout_lines[1] }}/ /etc/letsencrypt/live/{{ old_ssl_info.stdout_lines[1] }}
+      rsync -av {{ old_web_ip }}::R/etc/letsencrypt/renewal/{{ old_ssl_info.stdout_lines[1] }}.conf /etc/letsencrypt/renewal/{{ old_ssl_info.stdout_lines[1] }}.conf
+      /bin/sed -i "/^account =/c\account = {{ new_ssl_info.stdout_lines[0] }}" /etc/letsencrypt/renewal/{{ old_ssl_info.stdout_lines[1] }}.conf
   delegate_to: "{{ new_web_ip }}"
+  when:
+    - old_ssl_info.stdout_lines | length > 1
+    - old_ssl_info.stdout_lines[0] | int > 0
+
+- name: fressSSL No Exist
+  debug:
+    msg: "무료SSL 도메인이 확인되지 않아 SSL rsync 작업을 건너뜁니다!"
+  when: 
+    - old_ssl_info.stdout_lines[0] | int == 0
 
 
 - name: Chown

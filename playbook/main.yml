@@ -1,0 +1,44 @@
+---
+- name: HASP 소스 배포
+  hosts: firstmall_multi_gcloud_patch_y, firstmall_multi_gcloud_patch_n, firstmall_multi_gwmart_gcloud, firstmall_addition_gcloud, firstmall_etc_gcloud
+  become: true
+  become_method: sudo 
+  user: zlxpf
+  
+
+#  vars: 
+#    deploy_server: 121.78.197.230
+ 
+#  vars_prompt:
+#    - name: "ip"
+#      prompt: "작업한 소스서버 ip를 입력해주세요!"
+#      private: no
+ 
+
+  tasks:
+
+    - name: 실서버 배포
+      shell: | 
+        rsync -av 121.78.197.230::isms/hasp/lib/apache.py /usr/local/hasp/lib/
+#        rsync -av 121.78.197.230::isms/hasp/commands/restore_domain_deny.py /usr/local/hasp/commands/
+      register: deploy_check
+
+    - name: deploy check 
+      shell: | 
+        ls -ld /usr/local/hasp/lib/apache.py
+ #       ls -ld /usr/local/hasp/commands/restore_domain_deny.py
+      register: ls_result
+
+    - name: chown
+      shell: |
+        chown root.root /usr/local/hasp/lib/apache.py
+
+    - name: show deploy check
+      debug:
+        var: ls_result.stdout_lines
+       
+
+
+
+
+

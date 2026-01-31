@@ -7,7 +7,7 @@
 
 
   vars:
-    new_web_ip: 121.78.197.97
+    new_web_ip: 121.78.197.53
     new_db_ip: 121.78.197.72
   
   vars_prompt:
@@ -27,7 +27,7 @@
 
 #공통변수 설정(하위 roles에서 사용)
   tasks:
-    - name: 1.homedir_name
+    - name: 1.홈 디렉터리
       shell: |
         cat /etc/passwd | grep {{ domain_name }} | awk -F ':' '{split($6,a,"/"); print a[3]}'
       register: homedir_name
@@ -37,7 +37,8 @@
         var: homedir_name.stdout    
 
 
-    - name: 2.account_name
+
+    - name: 2.계정명
       shell: |
         cat /etc/passwd | grep {{ homedir_name.stdout }}/data | awk -F ':' '{print $1}' 
       register: account_name
@@ -46,8 +47,9 @@
       debug:
         var: account_name.stdout
   
+
     
-    - name: 3.conf_path
+    - name: 3.아파치 conf  경로
       shell: |
         if [ -e "/etc/httpd/conf/vhost/{{ domain_name }}.conf" ]; then
           echo "/etc/httpd/conf/"
@@ -61,19 +63,29 @@
         var: conf_path.stdout
 
 
-    - name: 4.ssl_info
+
+    - name: 4-1.대표도메인 SSL 정보 (구 서버)
       shell: |
         count=$(grep -w ServerName {{ conf_path.stdout }}/vhost/{{ domain_name }}.conf | grep -v "firstmall.kr" | wc -l)
         ssl_domain=$(grep -w ServerName {{ conf_path.stdout }}/vhost/{{ domain_name }}.conf | grep -v "firstmall.kr" | awk '{print $2}')
-        ssl_account=$(ls /etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory)
-        echo "$count"
+        echo "$count"        
         echo "$ssl_domain"
-        echo "$ssl_account"
-      register: ssl_info
-      delegate_to: "{{ new_web_ip }}"
-    - name: SSL debug
+      register: old_ssl_info
+      delegate_to: "{{ old_web_ip }}"
+    - name: count와 ssl_domain 디버깅
       debug: 
-        var: ssl_info.stdout_lines
+        var: old_ssl_info.stdout_lines
+
+    - name: 4-2.SSL account 값 (신 서버)
+      shell: |
+        ssl_account=$(ls /etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory)
+        echo "$ssl_account"
+      register: new_ssl_info
+      delegate_to: "{{ new_web_ip }}"
+    - name: ssl_account 디버깅
+      debug:
+        var: new_ssl_info.stdout_lines
+
 
     
     - name: 5.DB root password

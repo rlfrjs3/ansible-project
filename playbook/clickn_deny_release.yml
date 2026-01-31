@@ -1,0 +1,73 @@
+---
+- name: clickn 사이트 차단해제
+  hosts: clickn-web
+  become: true
+  become_method: sudo 
+  remote_user: zlxpf
+  
+
+ 
+
+  tasks:
+    - name: 차단된 도메인 리스트 읽기
+      set_fact: 
+        domain_list: "{{ lookup('file', '/home/gcadmin/gs2503063/clickn_deny_list.txt').splitlines() }}"
+
+    - name: 차단된 도메인 vhost가 있는지 체크
+      stat:
+        path: "/usr/local/nginx/conf/vhost/{{ item }}.conf"
+      loop: "{{ domain_list }}"
+      register: vhost_stat
+
+    - name: 차단된 도메인이 vhost에 있다면, vhost에서 deny.conf -> common.conf로 수정
+      replace:
+        path: "/usr/local/nginx/conf/vhost/{{ item.item }}.conf"
+        regexp: 'deny\.conf'
+        replace: 'common.conf'
+      loop: "{{ vhost_stat.results }}"
+      when: item.stat.exists
+      #notify: nginx syntax check
+
+    - name: DocumentRoot 경로 변경
+      replace: 
+        path: "/usr/local/nginx/conf/vhost/{{ item.item }}.conf"
+        regexp: '/home/httpd/html/expire'
+        replace: "/www/{{ item.item | regex_replace('\\.clickn\\.co\\.kr$', '') }}_clickn_co_kr/public"
+      loop: "{{ vhost_stat.results }}"
+      when: item.stat.exists
+    
+    
+    - name: nginx 문법검사
+      shell: | 
+        /usr/local/nginx/sbin/nginx -t 
+      register: nginx_stat
+      ignore_errors: true
+      changed_when: false
+      
+    - name: 문법오류 출력
+      debug:
+        msg: "{{ nginx_stat.stderr }}"
+      when: nginx_stat.rc != 0 
+    
+    - name: nginx reload
+      shell: | 
+        /usr/local/nginx/sbin/nginx -s reload
+      when: nginx_stat.rc == 0
+
+ 
+
+
+      
+
+
+
+
+
+
+ 
+       
+
+
+
+
+

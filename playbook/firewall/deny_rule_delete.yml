@@ -1,0 +1,31 @@
+- name: 방화벽 인바운드 차단했던 정책 삭제
+  hosts: clickn-web
+  user: zlxpf
+  become: yes
+  become_method: sudo
+
+  vars:
+    firewall_conf: "/usr/local/manage_hosting/firewall/conf/alone_input_drop.conf"
+
+  vars_prompt:
+    - name: "ip"
+      prompt: "삭제할 ip를 입력하세요 (ex. 1.1.1.1 또는 1.1.1.0/24)"
+      private: no
+    
+
+
+  tasks:
+    - name: 입력IP 정책 존재 체크 및 삭제
+      replace:
+        path: "{{ firewall_conf }}"
+        regexp: |
+          ^\s*(#.*?\n\s*)?.*{{ ip | regex_escape }}.*$
+        replace: ''
+      register: policy_removed
+
+    - name: 방화벽 재시작
+      shell: |
+        /etc/init.d/firewall restart
+      when: policy_removed.changed 
+
+      

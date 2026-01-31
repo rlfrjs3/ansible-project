@@ -12,7 +12,8 @@
 
 - name: Set SSL cert name if exists
   set_fact:
-    ssl_cert_name: "{{ (ssl_info.stdout_lines[1] | default('')) }}"
+    ssl_cert_name: "{{ ssl_info.stdout_lines[1] | default('') | trim }}"
+
 
 - name: Delete freeSSL
   shell: |

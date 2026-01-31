@@ -1,0 +1,146 @@
+---
+- name: 쿼리문 날려서 CSV 형태로 추출
+  hosts: firstmall_multi_gcloud_patch_n
+  user: zlxpf
+  become: yes
+  become_user: root
+  gather_facts: false
+  vars:
+    ansible_remote_tmp: /tmp
+    ansible_python_interpreter: /usr/bin/python3
+    mysql_user: root
+    mysql_password: "tyvldahftkdjqqn!#%&"
+    mysql_bin: /usr/local/mysql/bin/mysql
+    mysql_extra_args: "--default-auth=mysql_native_password --ssl-mode=DISABLED"
+    select_query: |
+      SELECT
+          (SELECT value 
+           FROM fm_config
+           WHERE codecd LIKE 'subDomain'
+           LIMIT 1) AS domain,
+          (SELECT value
+           FROM fm_config
+           WHERE groupcd='inicis' AND codecd='nonActiveXUse'
+           LIMIT 1) AS nonActiveXUse,
+          (SELECT value
+           FROM fm_config
+           WHERE groupcd='inicis' AND codecd='signKey'
+           LIMIT 1) AS signKey;
+  tasks:
+    - name: 1. 서버에서 DB명 추출
+      command: >
+        {{ mysql_bin }}
+        {{ mysql_extra_args }}
+        -N -u{{ mysql_user }} {% if mysql_password != "" %}-p{{ mysql_password }}{% endif %}
+        -e "SELECT table_schema FROM information_schema.tables WHERE table_name = 'fm_config';"
+      register: db_list
+      changed_when: false
+
+
+    - name: 2. 추출한 DB명 변수에 저장
+      set_fact:
+        db_names: "{{ db_list.stdout_lines | unique }}"
+
+
+    - name: 3. 각 DB에 쿼리 실햏
+      shell: |
+        {% if mysql_password != "" %}MYSQL_PWD='{{ mysql_password }}'{% endif %} \
+        {{ mysql_bin }} {{ mysql_extra_args }} \
+        -u{{ mysql_user }} \
+        --socket=/tmp/mysql.sock \
+        -D {{ db }} \
+        -e "{{ select_query }}" \
+        --batch
+      loop: "{{ db_names }}"
+      loop_control:
+        loop_var: db
+      register: query_result
+      failed_when: false
+      changed_when: false
+      ignore_errors: true
+
+
+    - name: Remove existing CSV file
+      ansible.builtin.file:
+        path: "/home/firefox/dbquery_{{ inventory_hostname }}.csv"
+        state: absent
+
+    - name: Process query results and generate CSV data
+      ansible.builtin.set_fact:
+        csv_data: "{{ csv_data | default([]) + [processed_row] }}"
+      vars:
+        processed_row: |
+          {%- if item.rc == 0 and item.stdout | length > 0 and 'ERROR' not in item.stdout -%}
+            {%- set lines = item.stdout.split('\n') -%}
+            {%- if lines | length >= 2 -%}
+              {%- set columns = lines[0].split('\t') -%}
+              {%- set values = lines[1].split('\t') -%}
+              {%- set row_dict = {'hostname': inventory_hostname, 'database': item.db} -%}
+              {%- for i in range(columns | length) -%}
+                {%- set col_value = values[i] if i < (values | length) else 'NULL' -%}
+                {%- set _ = row_dict.update({columns[i]: col_value}) -%}
+              {%- endfor -%}
+              {{ row_dict }}
+            {%- else -%}
+              {{ {'hostname': inventory_hostname, 'database': item.db, 'error': 'NO_DATA'} }}
+            {%- endif -%}
+          {%- else -%}
+            {{ {'hostname': inventory_hostname, 'database': item.db, 'error': 'QUERY_FAILED'} }}
+          {%- endif -%}
+      loop: "{{ query_result.results }}"
+      loop_control:
+        loop_var: item
+
+
+    - name: Extract all unique column names
+      ansible.builtin.set_fact:
+        temp_columns: "{{ temp_columns | default([]) | union(item.keys() | list) }}"
+      loop: "{{ csv_data }}"
+      loop_control:
+        loop_var: item
+
+    - name: Set column order with fixed sequence
+      ansible.builtin.set_fact:
+        all_columns: "{{ fixed_order + remaining_columns }}"
+      vars:
+        fixed_order: ['hostname', 'database']
+        remaining_columns: "{{ (temp_columns | difference(fixed_order + ['error'])) | sort + (['error'] if 'error' in temp_columns else []) }}"
+
+    - name: Generate CSV content with all columns
+      ansible.builtin.set_fact:
+        csv_content: |
+          {{ all_columns | join(',') }}
+          {% for row in csv_data %}
+          {%- set row_values = [] -%}
+          {%- for col in all_columns -%}
+            {%- set col_value = row[col] | default('NULL') -%}
+            {%- if col_value == 'NULL' or col_value is none or col_value == '' -%}
+              {%- set _ = row_values.append('NULL') -%}
+            {%- else -%}
+              {%- set _ = row_values.append('"' + (col_value | string | replace('"', '""')) + '"') -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {{ row_values | join(',') }}
+          {% endfor %}
+
+    - name: Write dynamic CSV file
+      ansible.builtin.copy:
+        content: "{{ csv_content }}"
+        dest: "/home/firefox/dbquery_{{ inventory_hostname }}.csv"
+        mode: '0644'
+
+    - name: Display CSV file location
+      ansible.builtin.debug:
+        msg: "CSV file saved to: /home/firefox/dbquery_{{ inventory_hostname }}.csv"
+
+    - name: Show CSV preview
+      ansible.builtin.command:
+        cmd: head -n 10 /home/firefox/dbquery_{{ inventory_hostname }}.csv
+      register: csv_preview
+      changed_when: false
+
+    - name: Display CSV preview
+      ansible.builtin.debug:
+        msg: "{{ csv_preview.stdout_lines }}"
+
+

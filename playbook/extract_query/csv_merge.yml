@@ -1,0 +1,174 @@
+---
+- name: Collect CSV files from remote servers
+  hosts: firstmall_multi_gwmart_server
+  user: zlxpf
+  become: yes
+  gather_facts: no
+  vars:
+    ansible_remote_tmp: /tmp/.ansible-${USER}/tmp
+    local_collection_dir: "./collected_csv_files"
+    final_merged_file: "./merged_dbquery_results.csv"
+  
+  tasks:
+    - name: Check if CSV file exists on remote server
+      ansible.builtin.stat:
+        path: "/home/firefox/dbquery_{{ inventory_hostname }}.csv"
+      register: remote_csv_file
+
+    - name: Fetch CSV file from remote server
+      ansible.builtin.fetch:
+        src: "/home/firefox/dbquery_{{ inventory_hostname }}.csv"
+        dest: "{{ local_collection_dir }}/dbquery_{{ inventory_hostname }}.csv"
+        flat: yes
+      when: remote_csv_file.stat.exists
+
+    - name: Display fetch status
+      ansible.builtin.debug:
+        msg: "CSV file from {{ inventory_hostname }}: {{ 'Downloaded' if remote_csv_file.stat.exists else 'Not found' }}"
+
+- name: Merge all CSV files into one (with duplicate removal)
+  hosts: localhost
+  gather_facts: false
+  vars:
+    local_collection_dir: "./collected_csv_files"
+    final_merged_file: "./merged_dbquery_results.csv"
+    
+  tasks:
+    - name: Create local collection directory
+      ansible.builtin.file:
+        path: "{{ local_collection_dir }}"
+        state: directory
+        mode: '0755'
+      delegate_to: localhost
+      run_once: true
+
+    - name: Find all downloaded CSV files
+      ansible.builtin.find:
+        paths: "{{ local_collection_dir }}"
+        patterns: "dbquery_*.csv"
+      register: csv_files_found
+      delegate_to: localhost
+      run_once: true
+
+    - name: Display found CSV files
+      ansible.builtin.debug:
+        msg: "Found {{ csv_files_found.files | length }} CSV files: {{ csv_files_found.files | map(attribute='path') | map('basename') | list }}"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Remove existing merged file
+      ansible.builtin.file:
+        path: "{{ final_merged_file }}"
+        state: absent
+      delegate_to: localhost
+      run_once: true
+
+    - name: Copy first CSV file with header
+      ansible.builtin.shell: |
+        first_file=$(ls "{{ local_collection_dir }}"/dbquery_*.csv | head -n 1)
+        if [ -n "$first_file" ]; then
+          cp "$first_file" "{{ final_merged_file }}"
+          echo "Header file copied: $(basename "$first_file")"
+        fi
+      register: header_copy
+      delegate_to: localhost
+      run_once: true
+      when: csv_files_found.files | length > 0
+
+    - name: Append remaining CSV files without headers
+      ansible.builtin.shell: |
+        file_path="{{ item.path }}"
+        filename=$(basename "$file_path")
+        first_file=$(ls "{{ local_collection_dir }}"/dbquery_*.csv | head -n 1)
+        if [ "$file_path" != "$first_file" ]; then
+          tail -n +2 "$file_path" >> "{{ final_merged_file }}"
+          data_rows=$(tail -n +2 "$file_path" | wc -l)
+          echo "Added $data_rows data rows from: $filename"
+        else
+          echo "Skipped $filename (used for header)"
+        fi
+      register: merge_files
+      delegate_to: localhost
+      loop: "{{ csv_files_found.files | sort(attribute='path') }}"
+      when: csv_files_found.files | length > 0
+
+    - name: Remove duplicate rows in merged CSV
+      ansible.builtin.shell: |
+        echo "Removing duplicate rows..."
+        header=$(head -n 1 "{{ final_merged_file }}")
+        tail -n +2 "{{ final_merged_file }}" | sort -u > /tmp/merged_unique_data.csv
+        echo "$header" > "{{ final_merged_file }}"
+        cat /tmp/merged_unique_data.csv >> "{{ final_merged_file }}"
+        rm -f /tmp/merged_unique_data.csv
+        echo "Duplicate rows removed. Unique dataset saved."
+      delegate_to: localhost
+      run_once: true
+      when: csv_files_found.files | length > 0
+
+    - name: Display merge results
+      ansible.builtin.debug:
+        msg: "{{ item.stdout_lines }}"
+      delegate_to: localhost
+      loop: "{{ merge_files.results }}"
+      when: merge_files is defined
+
+    - name: Calculate final statistics
+      ansible.builtin.shell: |
+        total_lines=$(wc -l < "{{ final_merged_file }}")
+        data_rows=$(tail -n +2 "{{ final_merged_file }}" | wc -l)
+        echo "=== Merge Summary ==="
+        echo "Total lines: $total_lines"
+        echo "Header rows: 1"
+        echo "Data rows: $data_rows"
+        echo "Files processed: {{ csv_files_found.files | length }}"
+        echo "Merged file: {{ final_merged_file }}"
+      register: final_stats
+      delegate_to: localhost
+      run_once: true
+      when: csv_files_found.files | length > 0
+
+    - name: Display final statistics
+      ansible.builtin.debug:
+        msg: "{{ final_stats.stdout_lines }}"
+      delegate_to: localhost
+      run_once: true
+      when: final_stats is defined
+
+    - name: Show merged file preview
+      ansible.builtin.shell: |
+        echo "=== Merged CSV Preview ==="
+        head -n 10 "{{ final_merged_file }}"
+        echo ""
+        echo "=== File Summary ==="
+        echo "Total lines: $(wc -l < '{{ final_merged_file }}')"
+        echo "Data rows: $(tail -n +2 '{{ final_merged_file }}' | wc -l)"
+        echo "File size: $(du -h '{{ final_merged_file }}' | cut -f1)"
+      register: file_preview
+      delegate_to: localhost
+      run_once: true
+      when: final_stats is defined
+
+    - name: Display file preview
+      ansible.builtin.debug:
+        msg: "{{ file_preview.stdout_lines }}"
+      delegate_to: localhost
+      run_once: true
+      when: file_preview is defined
+
+    - name: Clean up individual CSV files
+      ansible.builtin.file:
+        path: "{{ local_collection_dir }}"
+        state: absent
+      delegate_to: localhost
+      run_once: true
+      when: true
+
+    - name: Final summary
+      ansible.builtin.debug:
+        msg: 
+          - "CSV collection and merge completed!"
+          - "Duplicates removed successfully."
+          - "Merged file available at: {{ final_merged_file }}"
+      delegate_to: localhost
+      run_once: true
+

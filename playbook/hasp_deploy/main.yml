@@ -1,0 +1,27 @@
+### 사용 전, 배포할 소스가 있는 서버ip와 소스경로 체크해서 수정해줘야 함 ###
+---
+- name : 1. HASP 소스 동기화
+  hosts: hasp_rsync
+  user: zlxpf
+  become: true
+  become_method: sudo 
+  tasks:
+    - name: 배포소스가 있는 서버 -> 197.230 서버에 rsync
+      shell: |
+        rsync -a 121.78.197.228::R/root/ansible_test.txt /www/pass/
+        #rsync -a 121.78.197.228::R/usr/local/hasp/lib/firstmall.py /www/pass/hasp/lib/
+        
+
+- name: 2. 실 서버 전체에 배포     
+  hosts: setting
+  user: zlxpf
+  become: true
+  become_method: sudo
+  tasks: 
+    - name: 2. 197.230 -> 실 서버 전체에 rsync    
+      shell: | 
+        rsync -av 121.78.197.230::isms/ansible_test.txt /root/
+        #rsync -av 121.78.197.230::isms/hasp/config/lib/clickn.py /usr/local/hasp/lib/
+
+
+

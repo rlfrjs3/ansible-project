@@ -1,0 +1,65 @@
+---
+- name: 방화벽 인바운드 차단 플레이북
+  hosts: firstmall_plus_patch_y, firstmall_plus_patch_n, firstmall_plus_server_patch_n, firstmall_multi_asp_web_patch_y, firstmall_multi_asp_web_patch_n, firstmall_multi_asp_db_patch_y, firstmall_multi_asp_db_patch_n, firstmall_multi_server_patch_y, firstmall_multi_server_patch_n, firstmall_multi_gwmart_server, firstmall_addition_server, firstmall_etc_server, firstmall_stock, imagehosting_server, firstmall_multi_gcloud_patch_y, firstmall_multi_gcloud_patch_n, firstmall_multi_gwmart_gcloud, firstmall_addition_gcloud, firstmall_etc_gcloud
+  user: zlxpf
+  become: yes
+  become_method: sudo
+
+  vars:
+    firewall_conf: "/usr/local/manage_hosting/firewall/conf/alone_input_drop.conf"
+
+  vars_prompt:
+    - name: "ip"
+      prompt: "차단할 ip를 입력하세요 (ex. 1.1.1.1 또는 1.1.1.0/24)"
+      private: no
+    
+    - name: "comment"
+      prompt: "주석을 입력하세요"
+      private: no
+
+
+
+  tasks:
+    - name: 입력ip 체크
+      shell: |
+        grep "{{ ip }}" "{{ firewall_conf }}"
+      register: ip_check
+      ignore_errors: yes
+
+    - name: 존재한다면 메시지 출력
+      debug:
+        msg: "해당 IP({{ ip }})는 이미 설정파일에 존재합니다!"
+      when: ip_check.rc == 0
+
+    - name: 코멘트 추가
+      lineinfile:
+        path: "{{ firewall_conf }}"
+        line: "\n# {{ comment }}"
+        state: present
+        backup: yes
+      when: ip_check.rc != 0
+
+    - name: IP 정책 추가
+      lineinfile:
+        path: "{{ firewall_conf }}"
+        line: "{{ item }}  0:      0:     all"
+        state: present
+        backup: yes
+      loop: "{{ ip.split(' ') }}"  #여러 개 ip 넣을때 공백으로 구분
+      when: ip_check.rc != 0
+
+    - name: 방화벽 재시작
+      shell: /etc/init.d/firewall restart
+      when: ip_check.rc != 0
+
+
+
+
+
+
+  
+
+
+
+
+ 

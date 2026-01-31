@@ -1,0 +1,119 @@
+---
+- name : 단독서버 리플리케이션
+  hosts: setting     #실행할 단독서버 ip 및 호스트 기재 필요
+  user: zlxpf
+  become: true
+  become_method: sudo 
+  gather_facts: yes
+
+  
+  vars:
+    mysql_path: "/usr/local/mysql/bin/mysql"
+    mysql_pwd: "tyvldahftkdjqqn!#%&"
+    
+
+
+  tasks:
+    - name: mysql 버전확인 변수
+      shell: |
+        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -N -s -e "SELECT VERSION();" | awk -F '.' '{print $1}'
+      register: mysql_version
+
+
+    - name: 설정파일(my.cnf와 리플리케이션 설정) rsync
+      block:       
+        - name: mysql 5 버전일때 
+          shell: | 
+            cp -a /etc/my.cnf /etc/my.cnf_{{ ansible_date_time.date }}
+            rsync -a 121.78.114.175::set/config/mysql_multi.cnf /etc/my.cnf
+            rsync -a 121.78.114.175::set/config/upgrade/multi1.sql /root/
+            rsync -a 121.78.114.175::set/config/upgrade/multi2.sql /root/
+          when: mysql_version.stdout == "5"
+
+        - name: mysql 8 버전일떄
+          shell: |
+            cp -a /etc/my.cnf /etc/my.cnf_{{ ansible_date_time.date }}
+            rsync -a 121.78.114.175::set/config/upgrade/my_multi.cnf /etc/my.cnf
+            rsync -a 121.78.114.175::set/config/upgrade/multi1.sql /root/
+            rsync -a 121.78.114.175::set/config/upgrade/multi2.sql /root/
+          when: mysql_version.stdout == "8"
+
+    
+    - name: 복제 계정(=repl) 생성 후 mysql 중지
+      shell: |
+        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' < /root/multi1.sql
+        /etc/init.d/mysqld stop
+        sleep 10 
+        ps -ef | grep mysql | grep -v grep | wc -l 
+      register: mysql_state
+    
+    - name: mysql 프로세스 갯수만 추출
+      set_fact:
+        mysql_count: "{{ mysql_state.stdout_lines[-1] }}"
+ 
+
+    - name: 마스터 데이터를 슬레이브 datadir로 rsync
+      block: 
+        - name: 
+          shell: |
+            rsync -av --delete --exclude="mysql-bin.*" --exclude="auto.cnf" /data/ /local_backup/mysql_slave/   데이터 정합성을 맞추기 위해 2번 반복
+            rsync -av --delete --exclude="mysql-bin.*" --exclude="auto.cnf" /data/ /local_backup/mysql_slave/
+          when: mysql_count == "0"
+        
+        - name:
+          fail:
+            msg: "mysql 서비스가 기동 중이라 데이터를 복사할 수 없습니다!  프로세스를 확인해주세요"
+          when: mysql_count != "0"
+
+
+    - name: mysql 스크립트 백업,변경 후 mysql 시작
+      block:
+        - name: mysql 5 버전일떄
+          shell: | 
+            cp -a /etc/init.d/mysqld /etc/init.d/mysqld_{{ ansible_date_time.date }}
+            rsync -a 121.78.114.175::set/config/mysqld_multi /etc/init.d/mysqld
+            /etc/init.d/mysqld start 
+          when: mysql_version.stdout == "5"
+
+        - name: mysql 8 버전일때
+          shell: |
+            cp -a /etc/init.d/mysqld /etc/init.d/mysqld_{{ ansible_date_time.date }}
+            rsync -a 121.78.114.175::set/config/upgrade/mysqld_multi /etc/init.d/mysqld
+            /etc/init.d/mysqld start
+          when: mysql_version.stdout == "8"
+
+    - name: 마스터DB 상태 조회
+      block:
+        - name: 바이너리 로그 파일 변수저장
+          shell: |
+            {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -e 'SHOW MASTER STATUS;' | grep mysql-bin | awk '{print $1}'
+          register: BIN        
+
+        - name: 포지션 번호 변수저장
+          shell: | 
+            {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -e 'SHOW MASTER STATUS;' | grep mysql-bin | awk '{print $2}'
+          register: POS
+        
+
+    - name: 마스터-슬레이브 리플리케이션 구성
+      shell: |
+        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -S /tmp/mysql1.sock -e "STOP SLAVE;"
+        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -S /tmp/mysql1.sock -e "RESET SLAVE;"      
+        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -S /tmp/mysql1.sock -e "CHANGE MASTER TO  MASTER_HOST='127.0.0.1', MASTER_USER='repl', MASTER_PASSWORD='gabiacns_flvmf', MASTER_LOG_FILE='{{ BIN.stdout }}', MASTER_LOG_POS={{ POS.stdout }}"
+        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -S /tmp/mysql1.sock -e "START SLAVE;"      
+
+
+    - name: 리플리케이션 상태 조회
+      shell: |
+        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -S /tmp/mysql1.sock -e 'SHOW SLAVE STATUS \G;' | egrep -w 'Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master'
+      register: REP_STATUS
+
+    - name: 상태 출력
+      debug:
+        msg: "{{ REP_STATUS.stdout }}"
+
+
+
+
+
+
