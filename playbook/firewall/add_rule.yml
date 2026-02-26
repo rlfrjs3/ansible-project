@@ -1,6 +1,6 @@
 ---
-- name: 방화벽 인바운드 추가 플레이북
-  hosts: clickn-web
+- name: 방화벽 인바운드 추가 플레이북 (단일 ip 입력만 가능)
+  hosts: setting 
   user: zlxpf
   become: yes
   become_method: sudo
@@ -47,7 +47,7 @@
     - name: IP 정책 추가
       lineinfile:
         path: "{{ firewall_conf }}"
-        line: "{{ item }}           0:      {{ port }}   tcp"
+        line: "{{ item }}           0:      {{ port }}   tcp"      #ip 범위로 넣을때는 tcp를 range로 변경해서 사용
         state: present
         backup: yes
       loop: "{{ ip.split(' ') }}"  #여러 개 ip 넣을때 공백으로 구분

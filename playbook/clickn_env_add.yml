@@ -1,0 +1,40 @@
+---
+- name: .env 내용추가
+  hosts: clickn-web
+  user: zlxpf
+  become: true
+ 
+  vars:
+    content: |
+      # easypayi
+      EASYPAY_API_SECRET_KEY=easypay!KICCTEST
+      
+      # gabiacnstt
+      INICIS_API_SIGN_KEY=gabiacns
+      INICIS_API_INIAPI_KEY=mt1hW6WHDlYqKikt
+      INICIS_API_INIAPI_IV=gHrmK52r6Mv0NN==
+
+
+  tasks:
+    - name: 디렉터리 찾기
+      find:
+        paths: /www
+        file_type: directory
+        patterns: "*_clickn_co_kr"
+      register: found_dirs
+ 
+    - name: 각 디렉터리 안에 .env 파일 있는지 검사
+      stat: 
+        path: "{{ item.path }}/.env"
+      loop: "{{ found_dirs.files }}"
+      register: env_stats
+
+    - name: .env 파일이 있는 경우만 내용추가 / 없으면 생략
+      lineinfile: 
+        path: "{{ item.item.path }}/.env"
+        line: "\n{{ content }}"
+        insertafter: EOF
+        state: present
+      loop: "{{ env_stats.results }}"
+      when: item.stat.exists
+          

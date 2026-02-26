@@ -7,7 +7,7 @@
 
 
   vars:
-    new_web_ip: 121.78.197.53
+    new_web_ip: 121.78.197.97
     new_db_ip: 121.78.197.72
   
   vars_prompt:
