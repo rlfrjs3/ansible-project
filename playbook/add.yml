@@ -1,0 +1,17 @@
+- name: global_rsync 내용추가
+  hosts: firstmall_multi_asp_web_patch_y
+  user: zlxpf
+  become: true
+
+  vars: 
+    target_file_path: "/home/server/global_rsync.sh"
+
+  tasks: 
+    - name: 내용추가
+      lineinfile:
+        path: "{{ target_file_path }}"
+        line: "rm -f /www/$DOMAIN/data/caches/*"
+        insertafter: EOF
+        state: present
+    
+        

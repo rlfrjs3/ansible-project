@@ -1,0 +1,19 @@
+- name: .env 내용 업데이트
+  hosts: clickn-web
+  become: true
+  
+  tasks:
+    - name: 대상 디렉터리 확인
+      shell: | 
+        ls -d /www/*_clickn_co_kr/.env
+      register: target_envs
+      ignore_errors: yes
+      check_mode: no
+  
+    - name: 내용 수정
+      replace: 
+        path: "{{ item }}"
+        regexp: 'easypay!KICCTEST'
+        replace: 'kTqWb!zNdLaXeHVm'
+      loop: "{{ target_envs.stdout_lines | default([]) }}"
+      when: target_envs.stdout_lines is defined and target_envs.stdout_lines | length > 0

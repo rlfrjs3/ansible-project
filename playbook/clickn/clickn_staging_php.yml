@@ -1,0 +1,20 @@
+- name: 각 홈 디렉터리에서 php 명령어 실행 
+  hosts: clickn-staging
+  become: true
+  
+  tasks:
+    - name: 대상 디렉터리 확인
+      find: 
+        paths: /www
+        file_type: directory
+        patterns: "*_clickn_co_kr"
+      register: site_dirs
+
+  
+    - name: 각 대상 디렉터리에서 php 명령어 실행
+      shell: "php artisan storage:link"
+      args: 
+        chdir: "{{ item.path }}"
+      loop: "{{ site_dirs.files }}"
+      register: link_result
+   
