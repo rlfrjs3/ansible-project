@@ -1,8 +1,9 @@
 ---
-- name: Run Select query and save to CSV
-  hosts: firstmall_multi_gwmart_server
+- name: 쿼리문 날려서 CSV 형태로 추출
+  hosts: firstmall_plus_server_patch_n
   user: zlxpf
   become: yes
+  become_user: root
   gather_facts: false
   vars:
     ansible_remote_tmp: /tmp
@@ -11,16 +12,30 @@
     mysql_password: "tyvldahftkdjqqn!#%&"
     mysql_bin: /usr/local/mysql/bin/mysql
     mysql_extra_args: "--default-auth=mysql_native_password --ssl-mode=DISABLED"
-#    exclude_dbs:
-#      - mysql
-#      - sys
-#      - information_schema
-#      - performance_schema
-    select_query: >
-        SELECT (SELECT `value` as domain FROM `fm_config` WHERE `codecd` LIKE 'subDomain' LIMIT 1) as subdomain, (SELECT `value` as domain FROM `fm_config` WHERE `groupcd` = 'system' and `codecd` LIKE 'domain' LIMIT 1) as domain, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='realnamephoneSikey' LIMIT 1) as realnamephoneSikey, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='realnamePhoneSipwd' LIMIT 1) as realnamePhoneSipwd, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='useRealnamephone' LIMIT 1) as useRealnamephone, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='useRealnamephone_dormancy' LIMIT 1) as useRealnamephone_dormancy, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='ipinSikey' LIMIT 1) as ipinSikey, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='ipinKeyString' LIMIT 1) as ipinKeyString, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='useIpin' LIMIT 1) as useIpin, (SELECT `value` FROM `fm_config` WHERE `groupcd`='realname' AND `codecd`='useIpin_dormancy' LIMIT 1) as useIpin_dormancy;
-
+    select_query: |
+      SELECT
+          (SELECT value 
+           FROM fm_config
+           WHERE codecd LIKE 'subDomain'
+           LIMIT 1) AS domain,
+          (SELECT value
+           FROM fm_config
+           WHERE groupcd='realname' AND codecd = 'useRealnamephone'
+           LIMIT 1) AS 회원가입_휴대폰인증,
+          (SELECT value
+           FROM fm_config
+           WHERE groupcd='realname' AND codecd='useRealnamephone_dormancy'
+           LIMIT 1) AS 휴먼회원_휴대폰인증,
+          (SELECT value
+           FROM fm_config
+           WHERE groupcd='realname' AND codecd = 'useIpin'
+           LIMIT 1) AS 회원가입_아이핀인증,
+          (SELECT value
+           FROM fm_config
+           WHERE groupcd='realname' AND codecd='useIpin_dormancy'
+           LIMIT 1) AS 휴먼회원_아이핀인증;
   tasks:
-    - name: Get user-created database names
+    - name: 1. 서버에서 DB명 추출
       command: >
         {{ mysql_bin }}
         {{ mysql_extra_args }}
@@ -29,41 +44,54 @@
       register: db_list
       changed_when: false
 
-    - name: Save DB names to fact
+
+    - name: 2. 추출한 DB명 변수에 저장
       set_fact:
         db_names: "{{ db_list.stdout_lines | unique }}"
 
-    - name: Run SELECT query in each DB
+
+    - name: 3. 각 DB에 쿼리 실햏
+      shell: |
+        {% if mysql_password != "" %}MYSQL_PWD='{{ mysql_password }}'{% endif %} \
+        {{ mysql_bin }} {{ mysql_extra_args }} \
+        -u{{ mysql_user }} \
+        --socket=/tmp/mysql.sock \
+        -D {{ db }} \
+        -e "{{ select_query }}" \
+        --batch
       loop: "{{ db_names }}"
       loop_control:
         loop_var: db
-      community.mysql.mysql_query:
-        login_user: "{{ mysql_user }}"
-        login_password: "{{ mysql_password }}"
-        login_db: "{{ db }}"
-        login_unix_socket: /tmp/mysql.sock
-        query: "{{ select_query }}"
       register: query_result
       failed_when: false
       changed_when: false
       ignore_errors: true
 
-    - name: Remove existing CSV file
+
+    - name: 4. 원격지 서버에 csv 파일 생성
       ansible.builtin.file:
-        path: "/tmp/dbquery_{{ inventory_hostname }}.csv"
+        path: "/home/firefox/dbquery_{{ inventory_hostname }}.csv"
         state: absent
 
-    - name: Process query results and generate CSV data
+    - name: 5. 쿼리 결과를 토대로 csv 파일 생성
       ansible.builtin.set_fact:
         csv_data: "{{ csv_data | default([]) + [processed_row] }}"
       vars:
         processed_row: |
-          {%- if item.query_result is defined and item.query_result[0] | length > 0 -%}
-            {%- set row_dict = {'hostname': inventory_hostname, 'database': item.db} -%}
-            {%- for key, value in item.query_result[0][0].items() -%}
-              {%- set _ = row_dict.update({key: (value | string)}) -%}
-            {%- endfor -%}
-            {{ row_dict }}
+          {%- if item.rc == 0 and item.stdout | length > 0 and 'ERROR' not in item.stdout -%}
+            {%- set lines = item.stdout.split('\n') -%}
+            {%- if lines | length >= 2 -%}
+              {%- set columns = lines[0].split('\t') -%}
+              {%- set values = lines[1].split('\t') -%}
+              {%- set row_dict = {'hostname': inventory_hostname, 'database': item.db} -%}
+              {%- for i in range(columns | length) -%}
+                {%- set col_value = values[i] if i < (values | length) else 'NULL' -%}
+                {%- set _ = row_dict.update({columns[i]: col_value}) -%}
+              {%- endfor -%}
+              {{ row_dict }}
+            {%- else -%}
+              {{ {'hostname': inventory_hostname, 'database': item.db, 'error': 'NO_DATA'} }}
+            {%- endif -%}
           {%- else -%}
             {{ {'hostname': inventory_hostname, 'database': item.db, 'error': 'QUERY_FAILED'} }}
           {%- endif -%}
@@ -71,22 +99,22 @@
       loop_control:
         loop_var: item
 
-    - name: Extract all unique column names
+
+    - name: 6. 중복된 컬럼값은 제거하고 하나만
       ansible.builtin.set_fact:
         temp_columns: "{{ temp_columns | default([]) | union(item.keys() | list) }}"
       loop: "{{ csv_data }}"
       loop_control:
         loop_var: item
 
-    - name: Set column order with fixed sequence
+    - name: 7. 컬럼 정렬
       ansible.builtin.set_fact:
         all_columns: "{{ fixed_order + remaining_columns }}"
       vars:
-#        fixed_order: ['hostname', 'database', 'GABIAID', 'shopsno', 'subdomain']
         fixed_order: ['hostname', 'database']
         remaining_columns: "{{ (temp_columns | difference(fixed_order + ['error'])) | sort + (['error'] if 'error' in temp_columns else []) }}"
 
-    - name: Generate CSV content with all columns
+    - name: 8. csv 변환
       ansible.builtin.set_fact:
         csv_content: |
           {{ all_columns | join(',') }}
@@ -94,7 +122,7 @@
           {%- set row_values = [] -%}
           {%- for col in all_columns -%}
             {%- set col_value = row[col] | default('NULL') -%}
-            {%- if col_value == 'NULL' or col_value is none -%}
+            {%- if col_value == 'NULL' or col_value is none or col_value == '' -%}
               {%- set _ = row_values.append('NULL') -%}
             {%- else -%}
               {%- set _ = row_values.append('"' + (col_value | string | replace('"', '""')) + '"') -%}
@@ -103,17 +131,17 @@
           {{ row_values | join(',') }}
           {% endfor %}
 
-    - name: Write dynamic CSV file
+    - name: 9. csv 파일로 저장
       ansible.builtin.copy:
         content: "{{ csv_content }}"
         dest: "/home/firefox/dbquery_{{ inventory_hostname }}.csv"
         mode: '0644'
 
-    - name: Display CSV file location
+    - name: 10. csv 파일 생성되었는지 확인
       ansible.builtin.debug:
         msg: "CSV file saved to: /home/firefox/dbquery_{{ inventory_hostname }}.csv"
 
-    - name: Show CSV preview
+    - name: 11. csv 파일 결과 보기
       ansible.builtin.command:
         cmd: head -n 10 /home/firefox/dbquery_{{ inventory_hostname }}.csv
       register: csv_preview
@@ -122,3 +150,5 @@
     - name: Display CSV preview
       ansible.builtin.debug:
         msg: "{{ csv_preview.stdout_lines }}"
+
+

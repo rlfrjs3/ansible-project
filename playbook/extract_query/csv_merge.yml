@@ -1,6 +1,6 @@
 ---
 - name: Collect CSV files from remote servers
-  hosts: firstmall_multi_gwmart_server
+  hosts: firstmall_plus_server_patch_n
   user: zlxpf
   become: yes
   gather_facts: no

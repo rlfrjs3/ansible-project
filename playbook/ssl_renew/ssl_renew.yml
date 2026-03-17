@@ -1,0 +1,34 @@
+---
+- name: 아파치&NGINX  SSL 인증서 파일 갱신 (정상 갱신되었으면 아파치 문법검사 및 재시작 작업 별도로 해줘야함)
+  hosts: 
+  user: zlxpf
+  become: true
+  
+  vars:
+    local_ssl_path: "/local_backup/wild.gabiacns.com/"
+    remote_ssl_path: "/www/ssl_firstmall/wild.gabiacns.com/"
+    backup_ssl_path: "/www/ssl_firstmall/2025_wild.gabiacns.com/"     #매년 갱신할 때마다 백업 디렉터리 년도만 변경
+
+
+  tasks:
+    - name: 기존 인증서 디렉터리 백업
+      shell: | 
+        cp -a {{ remote_ssl_path }} {{ backup_ssl_path }}
+      args:
+        creates: "{{ backup_ssl_path }}"  #이미 백업 디렉터리가 있다면 실행 안함(중복방지)
+      ignore_errors: yes
+
+
+    - name: 앤서블 로컬서버에 있는 인증서 파일을 원격지 서버로 동기화
+      synchronize:
+        src: "{{ local_ssl_path }}"
+        dest: "{{ remote_ssl_path }}"
+        recursive: yes
+        delete: no   #원격지에만 있는 파일은 삭제하지 않음 (rsync 기본값)
+        archive: yes
+      
+
+#    - name: NGINX를 위한 cert.pem 생성 (체인 + 인증서 합친 파일)
+#      shell: |
+#        cat {{ remote_ssl_path }}star_gabiacns_com_cert.pem {{ remote_ssl_path }}
+       

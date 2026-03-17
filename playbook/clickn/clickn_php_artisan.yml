@@ -1,5 +1,5 @@
 - name: 각 홈 디렉터리에서 php 명령어 실행 
-  hosts: clickn-staging
+  hosts: clickn-web
   become: true
   
   tasks:
