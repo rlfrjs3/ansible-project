@@ -1,5 +1,5 @@
 ---
-- name: 클릭엔 fail2ban 설치&설정
+- name: 클릭엔 fail2ban 설치&설정   
   hosts: setting
   user: zlxpf
   become: true
@@ -27,8 +27,8 @@
         
         - name: 1-3. 설정 원복
           command: dnf config-manager --setopt=*.skip_if_unavailable=False --save
-
-    - name: 2. nginx-ddos filter 설정
+식
+    - name: 2. nginx-ddos filter 설정    #어떤 패턴이 공격인지를 정의하는 정규 표현식
       copy: 
         dest: /etc/fail2ban/filter.d/nginx-ddos.conf
         owner: root
@@ -46,7 +46,7 @@
                         ^<HOST> .* "GET /file/[0-9]+(\?[^"]*)? HTTP/.*"              
                         ^<HOST> .* "GET /(gallerys|boards|productGroups|products/benefits|contactform|modules)(/|\?|\s).* HTTP/.*"
 
-    - name: 3. nginx-ddos action 설정
+    - name: 3. nginx-ddos action 설정     #패턴이 확인되면 어떻게 액션을 할 것인지 
       copy:
         dest: /etc/fail2ban/action.d/nginx-ddos.conf
         owner: root
@@ -66,7 +66,7 @@
           actionstop =
           actioncheck = 
 
-    - name: 4. 로깅 스크립트 생성
+    - name: 4. 로깅 스크립트 생성     
       copy: 
         dest: /usr/local/manage_hosting/nginx-ddos-notification.sh
         owner: root
@@ -96,7 +96,7 @@
           # curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"차단됨: $IP\"}" 
           # https://hooks.slack.com/services/T000/B000/XXXX
         
-    - name: 5. jail.local 설정
+    - name: 5. jail.local 설정         #감옥이 어떻게 실행될 것인지에 대한 내용
       copy:
         dest: /etc/fail2ban/jail.local
         owner: root
@@ -105,7 +105,7 @@
         content: |
           [nginx-ddos]
           enabled = true
-          filter  = nginx-ddos
+          filter  = nginx-ddos       
           port    = http,https
           protocol = tcp
 

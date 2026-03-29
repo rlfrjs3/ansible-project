@@ -1,0 +1,14 @@
+/ssl-certs.py --help
+usage: ssl-certs.py [-h] [--list] [--host HOST] [--debug]
+
+Ansible dynamic inventory
+
+optional arguments:
+  -h, --help   show this help message and exit
+  --list       List instances (default: True)
+  --host HOST  Get all the variables about a specific instance
+  --debug
+
+EXAMPLE
+ansible -i ~/ssl-certs.py --list-hosts wild_gabiacns_com
+ansible -i ~/ssl-certs.py --list-hosts wild_gabiacns_com_firstmall_addition

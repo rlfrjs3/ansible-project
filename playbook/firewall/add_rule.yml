@@ -1,61 +1,66 @@
 ---
-- name: 방화벽 인바운드 추가 플레이북 (단일 ip 입력만 가능)
-  hosts: setting 
+- name: 방화벽 인바운드 추가 플레이북  (복수ip 입력해서 한번에 적용 가능)
+  hosts: setting
   user: zlxpf
   become: yes
   become_method: sudo
+
+
+
 
   vars:
     firewall_conf: "/usr/local/manage_hosting/firewall/conf/input_accept.conf"
 
   vars_prompt:
-    - name: "ip"
-      prompt: "추가할 ip를 입력하세요 (ex. 1.1.1.1 또는 1.1.1.0/24)"
+    - name: "input_data"
+      prompt: "추가할 ip와 port를 입력하세요! (여러개면 공백으로 구분, ex: 1.1.1.1:25 2.2.2.2:443)"
       private: no
     
-    - name: "port"
-      prompt: "오픈할 서버 포트를 입력하세요"
-      private: no
-
     - name: "comment"
       prompt: "주석을 입력하세요"
       private: no
 
 
 
-
   tasks:
-    - name: 입력ip 체크
+    - name: 입력받은input_data를 리스트로 변환
+      set_fact:
+        policy_list: "{{ input_data.split() }}"
+
+
+ 
+    - name: 1. 입력받은 ip가 이미 등록되어 있는지 체크
       shell: |
-        grep -E "^{{ ip }}[[:space:]]+0:[[:space:]]+{{ port }}[[:space:]]+tcp" "{{ firewall_conf }}"
-      register: ip_check
+        IP=$(echo {{ item }} | cut -d':' -f1)
+        PORT=$(echo {{ item }} | cut -d':' -f2)
+        grep -E "^${IP//./\.}[[:space:]]+0:[[:space:]]+${PORT}[[:space:]]+tcp" "{{ firewall_conf }}"
+      loop: "{{ policy_list }}"
+      register: ip_checks
       ignore_errors: yes
+      changed_when: false
 
-    - name: 존재한다면 메시지 출력
-      debug: 
-        msg: "해당 IP({{ ip }})와 PORT({{ port }})는 이미 설정파일에  존재합니다!"
-      when: ip_check.rc == 0
 
-    - name: 코멘트 추가
+    - name: 2. 새로 등록할 정책이 하나라도 있을 때만 주석 추가
       lineinfile:
         path: "{{ firewall_conf }}"
         line: "\n# {{ comment }}"
-        state: present
-        backup: yes
-      when: ip_check.rc != 0
+        state: present 
+        insertafter: EOF       #파일의 맨 마지막 줄 뒤에 추가
+      when: ip_checks.results | map(attribute='rc') | list | sum > 0
 
-    - name: IP 정책 추가
+
+    - name: 3. 중복되지 않은 정책만 각각의 포트로 추가
       lineinfile:
         path: "{{ firewall_conf }}"
-        line: "{{ item }}           0:      {{ port }}   tcp"      #ip 범위로 넣을때는 tcp를 range로 변경해서 사용
+        line: "{{ item.item.split(':')[0] }}           0:      {{ item.item.split(':')[1] }}   tcp"       #ip 범위로 넣을때는 tcp를 range로 변경해서 사용
         state: present
-        backup: yes
-      loop: "{{ ip.split(' ') }}"  #여러 개 ip 넣을때 공백으로 구분
-      when: ip_check.rc != 0
+      loop: "{{ ip_checks.results }}"
+      when: item.rc != 0
+   
 
-    - name: 방화벽 재시작
+    - name: 4. 설정 변경되었다면, 방화벽 재시작
       shell: /etc/init.d/firewall restart
-      when: ip_check.rc != 0
+      when: ip_checks.results | map(attribute='rc') | list | sum > 0 
 
 
 

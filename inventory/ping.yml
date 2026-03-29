@@ -1,0 +1,11 @@
+---
+- name: ping
+  hosts: wild_clickn_co_kr_builders_addition 
+  become: yes
+  user: zlxpf
+  become_method: sudo
+#  vars:
+#    web_server: ha-proxy
+  tasks:
+    - name: ping
+      ping:

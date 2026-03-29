@@ -1,6 +1,6 @@
 ---
 - name: 아파치&NGINX  SSL 인증서 파일 갱신 (정상 갱신되었으면 아파치 문법검사 및 재시작 작업 별도로 해줘야함)
-  hosts: 
+  hosts: aaa
   user: zlxpf
   become: true
   
@@ -24,7 +24,7 @@
         src: "{{ local_ssl_path }}"
         dest: "{{ remote_ssl_path }}"
         recursive: yes
-        delete: no   #원격지에만 있는 파일은 삭제하지 않음 (rsync 기본값)
+        delete: yes   # rsync --delete 옵션, 즉 소스에 없는 것은 원격지에서도 지움 
         archive: yes
       
 

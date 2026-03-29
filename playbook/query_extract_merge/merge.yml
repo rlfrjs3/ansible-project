@@ -1,6 +1,6 @@
 ---
-- name: Collect CSV files from remote servers
-  hosts: firstmall_plus_server_patch_n
+- name: 원격서버의 csv 파일 병합
+  hosts: firstmall_multi_gwmart_server
   user: zlxpf
   become: yes
   gather_facts: no
@@ -10,23 +10,23 @@
     final_merged_file: "./merged_dbquery_results.csv"
   
   tasks:
-    - name: Check if CSV file exists on remote server
+    - name: 원격 서버에 csv 파일이 있는지 체크
       ansible.builtin.stat:
         path: "/home/firefox/dbquery_{{ inventory_hostname }}.csv"
       register: remote_csv_file
 
-    - name: Fetch CSV file from remote server
+    - name: 파일을 가져옴
       ansible.builtin.fetch:
         src: "/home/firefox/dbquery_{{ inventory_hostname }}.csv"
         dest: "{{ local_collection_dir }}/dbquery_{{ inventory_hostname }}.csv"
         flat: yes
       when: remote_csv_file.stat.exists
 
-    - name: Display fetch status
+    - name: 가져온 파일상태 확인
       ansible.builtin.debug:
         msg: "CSV file from {{ inventory_hostname }}: {{ 'Downloaded' if remote_csv_file.stat.exists else 'Not found' }}"
 
-- name: Merge all CSV files into one (with duplicate removal)
+- name: csv 파일병합 (중복값은 제거)
   hosts: localhost
   gather_facts: false
   vars:
@@ -34,7 +34,7 @@
     final_merged_file: "./merged_dbquery_results.csv"
     
   tasks:
-    - name: Create local collection directory
+    - name: 로컬에 병합 디렉터리 생성
       ansible.builtin.file:
         path: "{{ local_collection_dir }}"
         state: directory
@@ -42,7 +42,7 @@
       delegate_to: localhost
       run_once: true
 
-    - name: Find all downloaded CSV files
+    - name: 다운로드한 모든 csv 파일 탐색
       ansible.builtin.find:
         paths: "{{ local_collection_dir }}"
         patterns: "dbquery_*.csv"
@@ -50,20 +50,20 @@
       delegate_to: localhost
       run_once: true
 
-    - name: Display found CSV files
+    - name: 탐색된 csv 파일 확인
       ansible.builtin.debug:
         msg: "Found {{ csv_files_found.files | length }} CSV files: {{ csv_files_found.files | map(attribute='path') | map('basename') | list }}"
       delegate_to: localhost
       run_once: true
 
-    - name: Remove existing merged file
+    - name: 기존에 병합된 파일 있을경우 삭제
       ansible.builtin.file:
         path: "{{ final_merged_file }}"
         state: absent
       delegate_to: localhost
       run_once: true
 
-    - name: Copy first CSV file with header
+    - name: 첫번째 csv 파일 복사하여 컬럼헤더 구성
       ansible.builtin.shell: |
         first_file=$(ls "{{ local_collection_dir }}"/dbquery_*.csv | head -n 1)
         if [ -n "$first_file" ]; then
@@ -75,7 +75,7 @@
       run_once: true
       when: csv_files_found.files | length > 0
 
-    - name: Append remaining CSV files without headers
+    - name: 나머지 csv 파일들은 컬럼헤더 제외하여 데이터만 병합
       ansible.builtin.shell: |
         file_path="{{ item.path }}"
         filename=$(basename "$file_path")
@@ -92,7 +92,7 @@
       loop: "{{ csv_files_found.files | sort(attribute='path') }}"
       when: csv_files_found.files | length > 0
 
-    - name: Remove duplicate rows in merged CSV
+    - name: 병합된 csv 파일 내 중복값 제거
       ansible.builtin.shell: |
         echo "Removing duplicate rows..."
         header=$(head -n 1 "{{ final_merged_file }}")
@@ -105,14 +105,14 @@
       run_once: true
       when: csv_files_found.files | length > 0
 
-    - name: Display merge results
+    - name: 병합 결과 확인
       ansible.builtin.debug:
         msg: "{{ item.stdout_lines }}"
       delegate_to: localhost
       loop: "{{ merge_files.results }}"
       when: merge_files is defined
 
-    - name: Calculate final statistics
+    - name: 최종 병합 통계(라인 수, 행 수) 산출
       ansible.builtin.shell: |
         total_lines=$(wc -l < "{{ final_merged_file }}")
         data_rows=$(tail -n +2 "{{ final_merged_file }}" | wc -l)
@@ -127,14 +127,14 @@
       run_once: true
       when: csv_files_found.files | length > 0
 
-    - name: Display final statistics
+    - name: 최종 병합 결과 출력
       ansible.builtin.debug:
         msg: "{{ final_stats.stdout_lines }}"
       delegate_to: localhost
       run_once: true
       when: final_stats is defined
 
-    - name: Show merged file preview
+    - name: 통합된 파일 미리보기
       ansible.builtin.shell: |
         echo "=== Merged CSV Preview ==="
         head -n 10 "{{ final_merged_file }}"
@@ -148,14 +148,14 @@
       run_once: true
       when: final_stats is defined
 
-    - name: Display file preview
+    - name: 
       ansible.builtin.debug:
         msg: "{{ file_preview.stdout_lines }}"
       delegate_to: localhost
       run_once: true
       when: file_preview is defined
 
-    - name: Clean up individual CSV files
+    - name: 개별 csv 파일은 삭제하여 정리
       ansible.builtin.file:
         path: "{{ local_collection_dir }}"
         state: absent
@@ -163,7 +163,7 @@
       run_once: true
       when: true
 
-    - name: Final summary
+    - name: 최종 작업결과 요약/확인
       ansible.builtin.debug:
         msg: 
           - "CSV collection and merge completed!"

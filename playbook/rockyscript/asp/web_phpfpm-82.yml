@@ -1,6 +1,6 @@
 ---
 - name: 다국어 웹서버 PHP-FPM 8.2 
-  hosts: setting
+  hosts: test
   become: yes
   become_method: sudo
   vars:
@@ -8,22 +8,22 @@
     SETUP: "121.78.114.175"
     SRC: "/usr/local/src"
     
-  vars_prompt:
-    - name: "hostname"
-      prompt: "호스트네임을 입력하세요: "
-      private: no
- 
-    - name: "shoppass"
-      prompt: "shopbuilder 패스워드를 입력하세요: "
-      private: yes
-
-    - name: "zlxpfpass"
-      prompt: "zlxpf 패스워드를 입력하세요: "
-      private: yes
-
-    - name: "rootpass"
-      prompt: "root 패스워드를 입력하세요: "
-      private: yes
+#  vars_prompt:
+#    - name: "hostname"
+#      prompt: "호스트네임을 입력하세요: "
+#      private: no
+# 
+#    - name: "shoppass"
+#      prompt: "shopbuilder 패스워드를 입력하세요: "
+#      private: yes
+#
+#    - name: "zlxpfpass"
+#      prompt: "zlxpf 패스워드를 입력하세요: "
+#      private: yes
+#
+#    - name: "rootpass"
+#      prompt: "root 패스워드를 입력하세요: "
+#      private: yes
         
   
 
@@ -32,9 +32,9 @@
 
 #OS 기본셋팅(공통)
   roles:
-    - role: "{{ role_path }}/common/config"
-    - role: "{{ role_path }}/common/service_install"
-    - role: "{{ role_path }}/common/service_onoff"
+#    - role: "{{ role_path }}/common/config"
+#    - role: "{{ role_path }}/common/service_install"
+#    - role: "{{ role_path }}/common/service_onoff"
 
 #Apache 2.4 + PHP-FPM 8.2 + MySQL 8.0 설치 (작업 편리성을 위해 웹서버에도 MySQL 설치함)
     - role: "{{ role_path }}/source/mysql/mysql80"

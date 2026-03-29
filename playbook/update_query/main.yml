@@ -1,0 +1,48 @@
+---
+- name: 모든 DB에 update문 일괄적용
+  hosts: clickn-db07 
+  user: zlxpf
+  become: yes
+  become_user: root
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    mysql_user: root
+    mysql_password: "tyvldahftkdjqqn!#%&"
+    mysql_bin: /usr/bin/mysql
+    exclude_dbs:
+      - "information_schema"
+      - "performance_schema"
+      - "mysql"
+      - "sys"
+    update_query: "UPDATE gb_staffs set staff_pw = SHA2(MD5('gcns1234'), 256) where staff_type ='0';"
+
+      
+  tasks:
+    - name: 1. 서버에서 DB명 추출
+      shell: >
+        {{ mysql_bin }} -u{{ mysql_user }} {% if mysql_password != "" %}-p'{{ mysql_password }}'{% endif %} -N -s
+        -e "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys')"
+      register: db_list
+      changed_when: false
+      
+
+    - name: 2. 각각의 DB에 update문 진행
+      shell: >
+        {{ mysql_bin }} -u{{ mysql_user }} {% if mysql_password != "" %}-p'{{ mysql_password }}'{% endif %} -D {{ item }} -e "{{ update_query }}" 
+      loop: "{{ db_list.stdout_lines | default([]) }}"
+      register: update_results
+      #ignore_errors: yes
+
+
+    - name: 3. 결과 출력
+      debug: 
+        msg: "{{ item.item }}"
+      loop: "{{ update_results.results }}"
+      when: item.rc is defined
+
+
+
+
+
+

@@ -1,0 +1,969 @@
+{
+  "_meta": {
+    "hostvars": {
+      "103.55.190.111": {
+        "web_server": "apache"
+      },
+      "103.55.190.196": {
+        "web_server": "apache"
+      },
+      "103.55.190.197": {
+        "web_server": "apache"
+      },
+      "103.55.190.198": {
+        "web_server": "apache"
+      },
+      "103.55.190.98": {
+        "web_server": "container"
+      },
+      "103.55.191.182": {
+        "web_server": "nginx"
+      },
+      "103.55.191.208": {
+        "web_server": "apache"
+      },
+      "103.55.191.211": {
+        "web_server": "apache"
+      },
+      "103.55.191.73": {
+        "web_server": "apache"
+      },
+      "103.55.191.81": {
+        "web_server": "nginx"
+      },
+      "106.246.242.230": {
+        "web_server": "apache"
+      },
+      "121.78.114.130": {
+        "web_server": "apache"
+      },
+      "121.78.114.140": {
+        "web_server": "apache"
+      },
+      "121.78.114.150": {
+        "web_server": "apache"
+      },
+      "121.78.114.151": {
+        "web_server": "apache"
+      },
+      "121.78.114.157": {
+        "web_server": "apache"
+      },
+      "121.78.114.169": {
+        "web_server": "apache"
+      },
+      "121.78.114.220": {
+        "web_server": "apache"
+      },
+      "121.78.114.40": {
+        "web_server": "apache"
+      },
+      "121.78.114.47": {
+        "web_server": "apache"
+      },
+      "121.78.114.51": {
+        "web_server": "apache"
+      },
+      "121.78.114.58": {
+        "web_server": "apache"
+      },
+      "121.78.114.72": {
+        "web_server": "apache"
+      },
+      "121.78.114.8": {
+        "web_server": "apache"
+      },
+      "121.78.195.18": {
+        "web_server": "iis"
+      },
+      "121.78.195.200": {
+        "web_server": "nginx"
+      },
+      "121.78.195.217": {
+        "web_server": "ha-proxy"
+      },
+      "121.78.195.218": {
+        "web_server": "ha-proxy"
+      },
+      "121.78.195.50": {
+        "web_server": "iis"
+      },
+      "121.78.195.51": {
+        "web_server": "iis"
+      },
+      "121.78.195.53": {
+        "web_server": "iis"
+      },
+      "121.78.195.80": {
+        "web_server": "apache"
+      },
+      "121.78.195.86": {
+        "web_server": "nginx"
+      },
+      "121.78.195.87": {
+        "web_server": "nginx"
+      },
+      "121.78.197.12": {
+        "web_server": "apache"
+      },
+      "121.78.197.15": {
+        "web_server": "apache"
+      },
+      "121.78.197.19": {
+        "web_server": "apache"
+      },
+      "121.78.197.193": {
+        "web_server": "nginx"
+      },
+      "121.78.197.211": {
+        "web_server": "apache"
+      },
+      "121.78.197.230": {
+        "web_server": "apache"
+      },
+      "121.78.197.234": {
+        "web_server": "container"
+      },
+      "121.78.197.236": {
+        "web_server": "apache"
+      },
+      "121.78.197.25": {
+        "web_server": "apache"
+      },
+      "121.78.197.28": {
+        "web_server": "apache"
+      },
+      "121.78.197.29": {
+        "web_server": "apache"
+      },
+      "121.78.197.40": {
+        "web_server": "apache"
+      },
+      "121.78.197.45": {
+        "web_server": "apache"
+      },
+      "121.78.197.46": {
+        "web_server": "apache"
+      },
+      "121.78.197.47": {
+        "web_server": "apache"
+      },
+      "121.78.197.48": {
+        "web_server": "apache"
+      },
+      "121.78.197.49": {
+        "web_server": "apache"
+      },
+      "121.78.197.5": {
+        "web_server": "apache"
+      },
+      "121.78.197.51": {
+        "web_server": "apache"
+      },
+      "121.78.197.53": {
+        "web_server": "apache"
+      },
+      "121.78.197.55": {
+        "web_server": "apache"
+      },
+      "121.78.197.56": {
+        "web_server": "apache"
+      },
+      "121.78.197.58": {
+        "web_server": "apache"
+      },
+      "121.78.197.59": {
+        "web_server": "apache"
+      },
+      "121.78.197.6": {
+        "web_server": "apache"
+      },
+      "121.78.197.60": {
+        "web_server": "apache"
+      },
+      "121.78.197.65": {
+        "web_server": "apache"
+      },
+      "121.78.197.66": {
+        "web_server": "apache"
+      },
+      "121.78.197.67": {
+        "web_server": "apache"
+      },
+      "121.78.197.68": {
+        "web_server": "apache"
+      },
+      "121.78.197.69": {
+        "web_server": "apache"
+      },
+      "121.78.197.75": {
+        "web_server": "apache"
+      },
+      "121.78.197.76": {
+        "web_server": "apache"
+      },
+      "121.78.197.77": {
+        "web_server": "apache"
+      },
+      "121.78.197.78": {
+        "web_server": "apache"
+      },
+      "121.78.197.80": {
+        "web_server": "apache"
+      },
+      "121.78.197.81": {
+        "web_server": "apache"
+      },
+      "121.78.197.82": {
+        "web_server": "apache"
+      },
+      "121.78.197.83": {
+        "web_server": "apache"
+      },
+      "121.78.197.84": {
+        "web_server": "apache"
+      },
+      "121.78.197.85": {
+        "web_server": "apache"
+      },
+      "121.78.197.86": {
+        "web_server": "apache"
+      },
+      "121.78.197.87": {
+        "web_server": "apache"
+      },
+      "121.78.197.88": {
+        "web_server": "apache"
+      },
+      "121.78.197.89": {
+        "web_server": "apache"
+      },
+      "121.78.197.90": {
+        "web_server": "apache"
+      },
+      "121.78.197.91": {
+        "web_server": "apache"
+      },
+      "121.78.197.92": {
+        "web_server": "apache"
+      },
+      "121.78.197.93": {
+        "web_server": "apache"
+      },
+      "121.78.197.94": {
+        "web_server": "apache"
+      },
+      "121.78.197.95": {
+        "web_server": "apache"
+      },
+      "121.78.197.96": {
+        "web_server": "apache"
+      },
+      "121.78.197.97": {
+        "web_server": "apache"
+      },
+      "139.150.65.122": {
+        "web_server": "nginx"
+      },
+      "139.150.65.125": {
+        "web_server": "nginx"
+      },
+      "139.150.65.143": {
+        "web_server": "nginx"
+      },
+      "139.150.65.146": {
+        "web_server": "nginx"
+      },
+      "139.150.65.235": {
+        "web_server": "nginx"
+      },
+      "139.150.70.133": {
+        "web_server": "container"
+      },
+      "139.150.70.134": {
+        "web_server": "container"
+      },
+      "139.150.70.135": {
+        "web_server": "container"
+      },
+      "139.150.70.137": {
+        "web_server": ""
+      },
+      "139.150.70.90": {
+        "web_server": "kestrel"
+      },
+      "139.150.70.91": {
+        "web_server": "kestrel"
+      },
+      "139.150.71.107": {
+        "web_server": "nginx"
+      },
+      "139.150.71.13": {
+        "web_server": "apache"
+      },
+      "139.150.71.147": {
+        "web_server": "nginx"
+      },
+      "139.150.71.158": {
+        "web_server": "nginx"
+      },
+      "139.150.71.246": {
+        "web_server": "container"
+      },
+      "139.150.71.28": {
+        "web_server": "nginx"
+      },
+      "139.150.73.11": {
+        "web_server": "apache"
+      },
+      "139.150.73.118": {
+        "web_server": "apache"
+      },
+      "139.150.73.137": {
+        "web_server": "apache"
+      },
+      "139.150.73.148": {
+        "web_server": "apache"
+      },
+      "139.150.73.184": {
+        "web_server": "apache"
+      },
+      "139.150.73.225": {
+        "web_server": "nginx"
+      },
+      "139.150.73.227": {
+        "web_server": ""
+      },
+      "139.150.73.54": {
+        "web_server": "apache"
+      },
+      "139.150.73.63": {
+        "web_server": "apache"
+      },
+      "139.150.74.115": {
+        "web_server": "apache"
+      },
+      "139.150.74.158": {
+        "web_server": "nginx"
+      },
+      "139.150.74.170": {
+        "web_server": "nginx"
+      },
+      "139.150.74.180": {
+        "web_server": "nginx"
+      },
+      "139.150.74.191": {
+        "web_server": "apache"
+      },
+      "139.150.74.200": {
+        "web_server": "nginx"
+      },
+      "139.150.74.223": {
+        "web_server": "apache"
+      },
+      "139.150.74.227": {
+        "web_server": "container"
+      },
+      "139.150.74.232": {
+        "web_server": "apache"
+      },
+      "139.150.74.244": {
+        "web_server": "apache"
+      },
+      "139.150.74.250": {
+        "web_server": "nginx"
+      },
+      "139.150.74.99": {
+        "web_server": "apache"
+      },
+      "139.150.75.184": {
+        "web_server": "nginx"
+      },
+      "139.150.75.195": {
+        "web_server": "kestrel"
+      },
+      "139.150.75.218": {
+        "web_server": "nginx"
+      },
+      "139.150.75.245": {
+        "web_server": "nginx"
+      },
+      "139.150.75.98": {
+        "web_server": "apache"
+      },
+      "139.150.76.177": {
+        "web_server": "nginx"
+      },
+      "139.150.76.46": {
+        "web_server": "apache"
+      },
+      "139.150.79.117": {
+        "web_server": "nginx"
+      },
+      "139.150.79.12": {
+        "web_server": "nginx"
+      },
+      "139.150.79.152": {
+        "web_server": "nginx"
+      },
+      "139.150.79.207": {
+        "web_server": "apache"
+      },
+      "139.150.79.220": {
+        "web_server": "apache"
+      },
+      "139.150.79.235": {
+        "web_server": "apache"
+      },
+      "139.150.79.24": {
+        "web_server": "apache"
+      },
+      "139.150.79.52": {
+        "web_server": "apache"
+      },
+      "139.150.79.86": {
+        "web_server": "apache"
+      },
+      "139.150.80.140": {
+        "web_server": "nginx"
+      },
+      "139.150.80.160": {
+        "web_server": "apache"
+      },
+      "139.150.80.191": {
+        "web_server": "nginx"
+      },
+      "139.150.80.28": {
+        "web_server": "apache"
+      },
+      "139.150.80.41": {
+        "web_server": "nginx"
+      },
+      "139.150.80.99": {
+        "web_server": "nginx"
+      },
+      "182.162.138.2": {
+        "web_server": "ha-proxy"
+      },
+      "182.162.138.3": {
+        "web_server": "ha-proxy"
+      },
+      "182.162.138.4": {
+        "web_server": "ha-proxy"
+      },
+      "182.162.138.5": {
+        "web_server": "ha-proxy"
+      },
+      "211.169.249.229": {
+        "web_server": "apache"
+      },
+      "211.169.249.250": {
+        "web_server": "nginx"
+      },
+      "211.169.249.54": {
+        "web_server": "apache"
+      },
+      "211.169.249.73": {
+        "web_server": "nginx"
+      },
+      "211.233.64.202": {
+        "web_server": "apache"
+      },
+      "211.47.70.201": {
+        "web_server": "apache"
+      },
+      "211.47.70.27": {
+        "web_server": "apache"
+      },
+      "211.47.70.45": {
+        "web_server": "apache"
+      },
+      "211.47.70.46": {
+        "web_server": "apache"
+      },
+      "211.47.70.50": {
+        "web_server": "apache"
+      },
+      "211.47.70.61": {
+        "web_server": "apache"
+      },
+      "211.47.70.62": {
+        "web_server": "apache"
+      },
+      "211.47.78.11": {
+        "web_server": "apache"
+      },
+      "211.47.78.12": {
+        "web_server": "apache"
+      },
+      "211.47.78.34": {
+        "web_server": "apache"
+      },
+      "211.47.78.35": {
+        "web_server": "apache"
+      },
+      "211.47.78.36": {
+        "web_server": "apache"
+      },
+      "211.47.78.68": {
+        "web_server": "apache"
+      },
+      "211.53.209.95": {
+        "web_server": "nginx"
+      },
+      "45.115.155.232": {
+        "web_server": "apache"
+      },
+      "45.115.155.243": {
+        "web_server": "apache"
+      }
+    }
+  },
+  "all": {
+    "children": [
+      "wild_firstmall_kr",
+      "wild_firstimage_kr",
+      "wild_diad_co_kr",
+      "wild_gabiacns_com",
+      "wild_geditor_co_kr",
+      "wild_geditor_ai",
+      "wild_geditorimage_co_kr",
+      "wild_clickn_co_kr",
+      "esellers_co_kr",
+      "wild_esellers_co_kr",
+      "wild_esellersimg_co_kr",
+      "ssl_gabiafreemall_com",
+      "wild_gabia_com"
+    ]
+  },
+  "esellers_co_kr": {
+    "children": [
+      "esellers_co_kr_common",
+      "esellers_co_kr_esellers",
+      "esellers_co_kr_zoomoney_solution"
+    ]
+  },
+  "esellers_co_kr_common": {
+    "hosts": [
+      "211.47.70.201",
+      "211.47.78.11",
+      "211.47.78.12",
+      "211.47.78.36"
+    ]
+  },
+  "esellers_co_kr_esellers": {
+    "hosts": [
+      "121.78.195.18",
+      "121.78.195.86",
+      "121.78.195.87",
+      "121.78.195.200"
+    ]
+  },
+  "esellers_co_kr_zoomoney_solution": {
+    "hosts": [
+      "121.78.195.217",
+      "121.78.195.218",
+      "182.162.138.2",
+      "182.162.138.3",
+      "182.162.138.4",
+      "182.162.138.5"
+    ]
+  },
+  "ssl_gabiafreemall_com": {
+    "children": [
+      "ssl_gabiafreemall_com_firstmall_addition"
+    ]
+  },
+  "ssl_gabiafreemall_com_firstmall_addition": {
+    "hosts": [
+      "139.150.79.235",
+      "139.150.80.160"
+    ]
+  },
+  "wild_clickn_co_kr": {
+    "children": [
+      "wild_clickn_co_kr_builders_solution",
+      "wild_clickn_co_kr_common",
+      "wild_clickn_co_kr_firstmall_addition",
+      "wild_clickn_co_kr_builders_addition"
+    ]
+  },
+  "wild_clickn_co_kr_builders_addition": {
+    "hosts": [
+      "103.55.191.81",
+      "139.150.71.147",
+      "139.150.71.158",
+      "139.150.73.225",
+      "139.150.74.170",
+      "139.150.74.250",
+      "139.150.79.12",
+      "139.150.80.41",
+      "139.150.80.140",
+      "211.169.249.250"
+    ]
+  },
+  "wild_clickn_co_kr_builders_solution": {
+    "hosts": [
+      "139.150.65.125",
+      "139.150.65.235",
+      "139.150.71.28",
+      "139.150.74.158",
+      "139.150.75.184",
+      "139.150.75.218",
+      "139.150.76.177",
+      "139.150.79.152",
+      "139.150.80.191",
+      "211.53.209.95"
+    ]
+  },
+  "wild_clickn_co_kr_common": {
+    "hosts": [
+      "211.47.70.201",
+      "211.47.78.11",
+      "211.47.78.12",
+      "211.47.78.36"
+    ]
+  },
+  "wild_clickn_co_kr_firstmall_addition": {
+    "hosts": [
+      "139.150.79.235",
+      "139.150.80.160"
+    ]
+  },
+  "wild_diad_co_kr": {
+    "children": [
+      "wild_diad_co_kr_diad"
+    ]
+  },
+  "wild_diad_co_kr_diad": {
+    "hosts": [
+      "139.150.70.133",
+      "139.150.70.134",
+      "139.150.70.135",
+      "139.150.70.137",
+      "139.150.73.227",
+    ]
+  },
+  "wild_esellers_co_kr": {
+    "children": [
+      "wild_esellers_co_kr_common",
+      "wild_esellers_co_kr_esellers",
+      "wild_esellers_co_kr_zoomoney_solution"
+    ]
+  },
+  "wild_esellers_co_kr_common": {
+    "hosts": [
+      "211.47.70.201",
+      "211.47.78.11",
+      "211.47.78.12",
+      "211.47.78.36"
+    ]
+  },
+  "wild_esellers_co_kr_esellers": {
+    "hosts": [
+      "121.78.195.18",
+      "121.78.195.86",
+      "121.78.195.87",
+      "121.78.195.200"
+    ]
+  },
+  "wild_esellers_co_kr_zoomoney_solution": {
+    "hosts": [
+      "121.78.195.217",
+      "121.78.195.218",
+      "182.162.138.2",
+      "182.162.138.3",
+      "182.162.138.4",
+      "182.162.138.5"
+    ]
+  },
+  "wild_esellersimg_co_kr": {
+    "children": [
+      "wild_esellersimg_co_kr_esellers"
+    ]
+  },
+  "wild_esellersimg_co_kr_esellers": {
+    "hosts": [
+      "121.78.195.80"
+    ]
+  },
+  "wild_firstimage_kr": {
+    "children": [
+      "wild_firstimage_kr_imagehosting"
+    ]
+  },
+  "wild_firstimage_kr_imagehosting": {
+    "hosts": [
+      "121.78.197.211"
+    ]
+  },
+  "wild_firstmall_kr": {
+    "children": [
+      "wild_firstmall_kr_firstmall_plus",
+      "wild_firstmall_kr_firstmall_multi",
+      "wild_firstmall_kr_firstmall_etc",
+      "wild_firstmall_kr_common",
+      "wild_firstmall_kr_firstmall_addition",
+      "wild_firstmall_kr_builders_addition"
+    ]
+  },
+  "wild_firstmall_kr_builders_addition": {
+    "hosts": [
+      "139.150.71.13"
+    ]
+  },
+  "wild_firstmall_kr_common": {
+    "hosts": [
+      "211.47.70.201",
+      "211.47.78.11",
+      "211.47.78.12",
+      "211.47.78.34",
+      "211.47.78.35",
+      "211.47.78.36",
+      "211.47.78.68"
+    ]
+  },
+  "wild_firstmall_kr_firstmall_addition": {
+    "hosts": [
+      "45.115.155.232",
+      "103.55.190.111",
+      "103.55.191.73",
+      "103.55.191.182",
+      "103.55.191.208",
+      "121.78.114.47",
+      "139.150.65.122",
+      "139.150.73.54",
+      "139.150.73.137",
+      "139.150.73.148",
+      "139.150.73.184",
+      "139.150.74.99",
+      "139.150.74.191",
+      "139.150.74.232",
+      "139.150.74.244",
+      "139.150.76.46",
+      "139.150.79.24",
+      "139.150.79.52",
+      "139.150.79.86",
+      "139.150.79.207",
+      "139.150.79.220",
+      "139.150.79.235",
+      "139.150.80.160",
+      "211.169.249.54"
+    ]
+  },
+  "wild_firstmall_kr_firstmall_etc": {
+    "hosts": [
+      "121.78.114.51",
+      "121.78.197.193",
+      "121.78.197.230",
+      "121.78.197.236"
+    ]
+  },
+  "wild_firstmall_kr_firstmall_multi": {
+    "hosts": [
+      "103.55.190.196",
+      "103.55.190.197",
+      "103.55.190.198",
+      "121.78.114.8",
+      "121.78.114.40",
+      "121.78.114.58",
+      "121.78.114.72",
+      "121.78.114.169",
+      "121.78.114.220",
+      "121.78.197.28",
+      "121.78.197.29",
+      "121.78.197.45",
+      "121.78.197.46",
+      "121.78.197.47",
+      "121.78.197.48",
+      "121.78.197.49",
+      "121.78.197.51",
+      "121.78.197.53",
+      "121.78.197.55",
+      "121.78.197.56",
+      "121.78.197.58",
+      "121.78.197.59",
+      "121.78.197.65",
+      "121.78.197.66",
+      "121.78.197.67",
+      "121.78.197.68",
+      "121.78.197.69",
+      "121.78.197.75",
+      "121.78.197.76",
+      "121.78.197.77",
+      "121.78.197.78",
+      "121.78.197.80",
+      "121.78.197.81",
+      "121.78.197.82",
+      "121.78.197.83",
+      "121.78.197.84",
+      "121.78.197.85",
+      "121.78.197.86",
+      "121.78.197.87",
+      "121.78.197.88",
+      "121.78.197.89",
+      "121.78.197.90",
+      "121.78.197.91",
+      "121.78.197.92",
+      "121.78.197.93",
+      "121.78.197.94",
+      "121.78.197.95",
+      "121.78.197.96",
+      "121.78.197.97",
+      "139.150.73.11",
+      "139.150.73.63"
+    ]
+  },
+  "wild_firstmall_kr_firstmall_plus": {
+    "hosts": [
+      "121.78.114.130",
+      "121.78.114.140",
+      "121.78.114.150",
+      "121.78.114.151",
+      "121.78.114.157",
+      "121.78.197.5",
+      "121.78.197.6",
+      "121.78.197.12",
+      "121.78.197.15",
+      "121.78.197.19",
+      "121.78.197.25",
+      "121.78.197.40",
+      "121.78.197.60"
+    ]
+  },
+  "wild_gabia_com": {
+    "children": [
+      "wild_gabia_com_firstmall_addition"
+    ]
+  },
+  "wild_gabia_com_firstmall_addition": {
+    "hosts": [
+      "139.150.80.99"
+    ]
+  },
+  "wild_gabiacns_com": {
+    "children": [
+      "wild_gabiacns_com_common",
+      "wild_gabiacns_com_management",
+      "wild_gabiacns_com_firstmall_addition",
+      "wild_gabiacns_com_builders_addition",
+      "wild_gabiacns_com_geditor_solution",
+      "wild_gabiacns_com_firstmall_etc"
+    ]
+  },
+  "wild_gabiacns_com_builders_addition": {
+    "hosts": [
+      "139.150.74.170"
+    ]
+  },
+  "wild_gabiacns_com_common": {
+    "hosts": [
+      "106.246.242.230",
+      "121.78.197.234",
+      "139.150.71.107",
+      "139.150.71.246",
+      "139.150.75.245",
+      "211.47.70.27",
+      "211.47.70.45",
+      "211.47.70.46",
+      "211.47.70.50",
+      "211.47.70.61",
+      "211.47.70.62",
+      "211.47.70.201",
+      "211.47.78.11",
+      "211.47.78.12",
+      "211.47.78.36"
+    ]
+  },
+  "wild_gabiacns_com_firstmall_addition": {
+    "hosts": [
+      "103.55.191.73",
+      "139.150.73.54",
+      "139.150.79.117",
+      "139.150.80.99"
+    ]
+  },
+  "wild_gabiacns_com_firstmall_etc": {
+    "hosts": [
+      "139.150.74.115"
+    ]
+  },
+  "wild_gabiacns_com_geditor_solution": {
+    "hosts": [
+      "139.150.65.143",
+      "139.150.65.146",
+      "139.150.74.180",
+      "139.150.74.200"
+    ]
+  },
+  "wild_gabiacns_com_management": {
+    "hosts": [
+      "211.233.64.202"
+    ]
+  },
+  "wild_geditor_ai": {
+    "children": [
+      "wild_geditor_ai_geditor_solution"
+    ]
+  },
+  "wild_geditor_ai_geditor_solution": {
+    "hosts": [
+      "139.150.65.143"
+    ]
+  },
+  "wild_geditor_co_kr": {
+    "children": [
+      "wild_geditor_co_kr_common",
+      "wild_geditor_co_kr_geditor_solution",
+      "wild_geditor_co_kr_geditor"
+    ]
+  },
+  "wild_geditor_co_kr_common": {
+    "hosts": [
+      "211.47.70.201",
+      "211.47.78.11",
+      "211.47.78.12",
+      "211.47.78.36"
+    ]
+  },
+  "wild_geditor_co_kr_geditor": {
+    "hosts": [
+      "211.169.249.73"
+    ]
+  },
+  "wild_geditor_co_kr_geditor_solution": {
+    "hosts": [
+      "139.150.65.143",
+      "139.150.65.146",
+      "139.150.74.180",
+      "139.150.74.200"
+    ]
+  },
+  "wild_geditorimage_co_kr": {
+    "children": [
+      "wild_geditorimage_co_kr_geditor",
+      "wild_geditorimage_co_kr_geditor_imagehosting",
+      "wild_geditorimage_co_kr_imagehosting"
+    ]
+  },
+  "wild_geditorimage_co_kr_geditor": {
+    "hosts": [
+      "211.169.249.229"
+    ]
+  },
+  "wild_geditorimage_co_kr_geditor_imagehosting": {
+    "hosts": [
+      "45.115.155.243",
+      "103.55.191.211",
+      "139.150.73.118",
+      "139.150.74.223",
+      "139.150.75.98",
+      "139.150.80.28"
+    ]
+  },
+  "wild_geditorimage_co_kr_imagehosting": {
+    "hosts": [
+      "121.78.197.211"
+    ]
+  }
+}
