@@ -1,6 +1,6 @@
 ---
 - name: 쿼리문 날려서 CSV 형태로 추출
-  hosts: firstmall_multi_asp_db_patch_n,firstmall_multi_server_patch_n,firstmall_multi_gwmart_server
+  hosts: firstmall_multi_gcloud_patch_y,firstmall_multi_gcloud_patch_n
   user: zlxpf
   become: yes
   become_user: root

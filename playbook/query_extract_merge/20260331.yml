@@ -1,6 +1,6 @@
 ---
 - name: 쿼리문 날려서 CSV 형태로 추출
-  hosts: firstmall_multi_gcloud_patch_y,firstmall_multi_gcloud_patch_n,firstmall_multi_gwmart_gcloud
+  hosts: firstmall_multi_gcloud_patch_y,firstmall_multi_gcloud_patch_n
   user: zlxpf
   become: yes
   become_user: root
@@ -14,28 +14,15 @@
     mysql_extra_args: "--default-auth=mysql_native_password --ssl-mode=DISABLED"
     select_query: |
       SELECT
-      (SELECT value 
-           FROM fm_config
-           WHERE codecd LIKE 'subDomain'
-           LIMIT 1) AS subDomain,
-         (SELECT domain AS domain    
-            FROM   fm_admin_env
-            LIMIT  1) AS domain,
-         (SELECT value
-          FROM fm_config
-          WHERE codecd LIKE 'ftp'
-          LIMIT 1) AS ftp,
-          (  SELECT value
-                    FROM fm_config
-                    WHERE groupcd ='lg' and codecd = 'mallCode'  LIMIT 1
-          ) AS  MID
-       FROM fm_config
-       WHERE EXISTS (
-          SELECT 1
-          FROM fm_config pc
-          WHERE pc.codecd = 'pgCompany'
-            AND pc.value = 'lg'
-       ) LIMIT 1;
+        (SELECT value FROM fm_config WHERE codecd IN ('ssl_domain') AND groupcd IN ('system')) AS ssl_domain,
+        (SELECT value FROM fm_config WHERE codecd IN ('subDomain') AND groupcd IN ('system')) AS subDomain,
+        IF(IFNULL((SELECT value FROM fm_config WHERE codecd IN ('cfg_default_nation') AND groupcd IN ('system')),'')='','구버전','다국어') AS '사이트버전',
+        (SELECT value FROM fm_config WHERE codecd IN ('ssl_use') AND groupcd IN ('system')) AS ssl_use,
+        (SELECT value FROM fm_config WHERE codecd IN ('use_service') AND groupcd IN ('kakaotalk')) AS kakaotalk_use,
+        (SELECT value FROM fm_config WHERE codecd IN ('serviceId') AND groupcd IN ('kakaotalk')) AS kakaotalk_serviceId,
+        (SELECT value FROM fm_config WHERE codecd IN ('authKey') AND groupcd IN ('kakaotalk')) AS kakaotalk_authKey,
+        (SELECT value FROM fm_config WHERE codecd IN ('status') AND groupcd IN ('kakaotalk')) AS kakaotalk_status,
+        (SELECT value FROM fm_config WHERE codecd IN ('yellowId') AND groupcd IN ('kakaotalk')) AS kakaotalk_yellowId;
 
   tasks:
     - name: 1. 서버에서 DB명 추출

@@ -294,3 +294,8 @@ ansible_user=zlxpf
 
 [clickn-db07]
 103.55.191.185
+
+
+[firstmall-old]
+121.78.197.126 ansible_python_interpreter=/usr/bin/python
+121.78.197.135 ansible_python_interpreter=/usr/bin/python

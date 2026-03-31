@@ -112,7 +112,7 @@
           # Nginx 로그 경로 (100개 vhost 고려)
           logpath = {{ nginx_log_path }}
 
-          # 감지 조건: 1분(60초) 동안 500번 이상 요청 시 차단
+          # 감지 조건: 10초 동안 100번 이상 요청 시 차단
           findtime = 10
           maxretry = 100
 
