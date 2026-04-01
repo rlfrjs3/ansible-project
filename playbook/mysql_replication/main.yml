@@ -1,6 +1,6 @@
 ---
 - name : 단독서버 리플리케이션
-  hosts: setting     #실행할 단독서버 ip 및 호스트 기재 필요
+  hosts: test
   user: zlxpf
   become: true
   become_method: sudo 
@@ -41,11 +41,14 @@
     
     - name: 복제 계정(=repl) 생성 후 mysql 중지
       shell: |
-        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' < /root/multi1.sql
+        export PATH=$PATH:{{ mysql_path | dirname }}
+      
+        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' < /root/multi1.sql 
         /etc/init.d/mysqld stop
         sleep 10 
         ps -ef | grep mysql | grep -v grep | wc -l 
       register: mysql_state
+      ignore_errors: yes
     
     - name: mysql 프로세스 갯수만 추출
       set_fact:
@@ -58,6 +61,7 @@
           shell: |
             rsync -av --delete --exclude="mysql-bin.*" --exclude="auto.cnf" /data/ /local_backup/mysql_slave/   데이터 정합성을 맞추기 위해 2번 반복
             rsync -av --delete --exclude="mysql-bin.*" --exclude="auto.cnf" /data/ /local_backup/mysql_slave/
+            chown -R mysql.mysql /local_backup/mysql_slave/
           when: mysql_count == "0"
         
         - name:
@@ -70,36 +74,44 @@
       block:
         - name: mysql 5 버전일떄
           shell: | 
+            export PATH=$PATH:{{ mysql_path | dirname }}
+
             cp -a /etc/init.d/mysqld /etc/init.d/mysqld_{{ ansible_date_time.date }}
             rsync -a 121.78.114.175::set/config/mysqld_multi /etc/init.d/mysqld
             /etc/init.d/mysqld start 
+            sleep 5
           when: mysql_version.stdout == "5"
 
         - name: mysql 8 버전일때
           shell: |
+            export PATH=$PATH:{{ mysql_path | dirname }}
+
             cp -a /etc/init.d/mysqld /etc/init.d/mysqld_{{ ansible_date_time.date }}
             rsync -a 121.78.114.175::set/config/upgrade/mysqld_multi /etc/init.d/mysqld
             /etc/init.d/mysqld start
+            sleep 5
           when: mysql_version.stdout == "8"
+
 
     - name: 마스터DB 상태 조회
       block:
-        - name: 바이너리 로그 파일 변수저장
+        - name: 마스터 상태 저장
           shell: |
-            {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -e 'SHOW MASTER STATUS;' | grep mysql-bin | awk '{print $1}'
-          register: BIN        
+            {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -N -s -e 'SHOW MASTER STATUS' 2>/dev/null 
+          register: MASTER_STATUS
 
-        - name: 포지션 번호 변수저장
-          shell: | 
-            {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -e 'SHOW MASTER STATUS;' | grep mysql-bin | awk '{print $2}'
-          register: POS
+        - name: 바이너리 파일 및 포지션 분리해서 저장
+          set_fact:
+            BIN: "{{ MASTER_STATUS.stdout.split()[0] }}"
+            POS: "{{ MASTER_STATUS.stdout.split()[1] }}"
+
         
 
     - name: 마스터-슬레이브 리플리케이션 구성
       shell: |
         {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -S /tmp/mysql1.sock -e "STOP SLAVE;"
         {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -S /tmp/mysql1.sock -e "RESET SLAVE;"      
-        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -S /tmp/mysql1.sock -e "CHANGE MASTER TO  MASTER_HOST='127.0.0.1', MASTER_USER='repl', MASTER_PASSWORD='gabiacns_flvmf', MASTER_LOG_FILE='{{ BIN.stdout }}', MASTER_LOG_POS={{ POS.stdout }}"
+        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -S /tmp/mysql1.sock -e "CHANGE MASTER TO  MASTER_HOST='127.0.0.1', MASTER_USER='repl', MASTER_PASSWORD='gabiacns_flvmf', MASTER_LOG_FILE='{{ BIN }}', MASTER_LOG_POS={{ POS }}"
         {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -S /tmp/mysql1.sock -e "START SLAVE;"      
 
 
