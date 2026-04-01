@@ -8,17 +8,14 @@
     version: 2022.4.8
     executable: pip3
 
-- name: pipenv 생성
+- name: pipenv 가상환경 생성 및 패키지 설치
   shell: |
     pipenv --python 3.6
+    pipenv install 
   args:
     chdir: /usr/local/hasp
-
-- name: HASP 설치
-  shell: |
-    python install
-  args:
-    chdir: /usr/local/hasp
+  environment:
+    PIPENV_VENV_IN_PROJECT: "true"
 
 - name: HASP 시작
   shell: |

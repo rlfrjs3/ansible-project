@@ -1,6 +1,6 @@
 ---
 - name: 원격서버의 csv 파일 병합
-  hosts: firstmall_multi_gcloud_patch_n
+  hosts: firstmall_multi_gwmart_server
   user: zlxpf
   become: yes
   gather_facts: no

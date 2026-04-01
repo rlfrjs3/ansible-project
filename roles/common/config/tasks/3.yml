@@ -1,6 +1,5 @@
 - name: SELinux 비활성화
   selinux:
-    policy: targeted
     state: disabled
 
 

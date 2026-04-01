@@ -3,10 +3,12 @@
   hosts: setting
   become: yes
   become_method: sudo
+  gather_facts: true
   vars:
     role_path: "/local_backup/ansible-project/roles"
     SETUP: "121.78.114.175"
     SRC: "/usr/local/src"
+    IP: "{{ ansible_default_ipv4.address }}"
     
   vars_prompt:
     - name: "hostname"

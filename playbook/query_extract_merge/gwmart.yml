@@ -1,0 +1,68 @@
+---
+- name: 쿼리문 날려서 CSV 형태로 추출       #강원더몰 전용 플레이북, DB가 1200개 정도 있어서 기본꺼 사용하면 메모리 부하 발생되어 새로 만듬
+  hosts: firstmall_multi_gwmart_server
+  user: zlxpf
+  become: yes
+  become_user: root
+  gather_facts: false
+  vars:
+    ansible_remote_tmp: /tmp
+    #ansible_python_interpreter: /usr/bin/python3
+    mysql_user: root
+    mysql_password: "tyvldahftkdjqqn!#%&"
+    mysql_bin: /usr/local/mysql/bin/mysql
+    #mysql_extra_args: "--default-auth=mysql_native_password --ssl-mode=DISABLED"
+    select_query: |
+      SELECT
+        (SELECT value FROM fm_config WHERE codecd IN ('ssl_domain') AND groupcd IN ('system')) AS ssl_domain,
+        (SELECT value FROM fm_config WHERE codecd IN ('subDomain') AND groupcd IN ('system')) AS subDomain,
+        IF(IFNULL((SELECT value FROM fm_config WHERE codecd IN ('cfg_default_nation') AND groupcd IN ('system')),'')='','구버전','다국어') AS '사이트버전',
+        (SELECT value FROM fm_config WHERE codecd IN ('ssl_use') AND groupcd IN ('system')) AS ssl_use,
+        (SELECT value FROM fm_config WHERE codecd IN ('use_service') AND groupcd IN ('kakaotalk')) AS kakaotalk_use,
+        (SELECT value FROM fm_config WHERE codecd IN ('serviceId') AND groupcd IN ('kakaotalk')) AS kakaotalk_serviceId,
+        (SELECT value FROM fm_config WHERE codecd IN ('authKey') AND groupcd IN ('kakaotalk')) AS kakaotalk_authKey,
+        (SELECT value FROM fm_config WHERE codecd IN ('status') AND groupcd IN ('kakaotalk')) AS kakaotalk_status,
+        (SELECT value FROM fm_config WHERE codecd IN ('yellowId') AND groupcd IN ('kakaotalk')) AS kakaotalk_yellowId;
+
+  tasks:
+    - name: 1. 서버에서 DB명 추출
+      command: >
+        {{ mysql_bin }}
+        -N -u{{ mysql_user }} {% if mysql_password != "" %}-p{{ mysql_password }}{% endif %}
+        -e "SELECT table_schema FROM information_schema.tables WHERE table_name = 'fm_config';"
+      register: db_list
+      changed_when: false
+
+
+    - name: 2. 추출한 DB명 변수에 저장
+      set_fact:
+        db_names: "{{ db_list.stdout_lines | unique }}"
+
+
+    - name: 3. CSV 헤더 생성
+      shell: | 
+        echo "hostname,database,ssl_domain,subDomain,사이트버전,ssl_use,kakaotalk_use,kakaotalk_serviceId,kakaotalk_authKey,kakaotalk_status,kakaotalk_yellowId" > /home/firefox/dbquery_{{ inventory_hostname }}.csv
+      changed_when: true
+
+ 
+    - name: 4. 각 DB에서 쿼리 실행 및 파일에 즉시 기록
+      shell: |
+        {{ mysql_bin }} -u{{ mysql_user }} -p'{{ mysql_password }}' -D {{ item }} --batch -e "{{ select_query }}" | tail -n +2 | sed 's/\t/","/g; s/^/"/; s/$/"/' >> /home/firefox/dbquery_{{ inventory_hostname }}.csv
+      loop: "{{ db_names }}"
+      throttle: 10
+      no_log: true
+      register: dev_null
+      changed_when: false
+      failed_when: false
+
+
+    - name: 5. 최종 결과 확인 (파일 생성여부)
+      stat:
+        path: "/home/firefox/dbquery_{{ inventory_hostname }}.csv"
+      register: csv_file
+
+    
+    - name: 6. 결과 출력
+      debug:
+        msg: "CSV 생성 완료: {{ csv_file.stat.path }} (Size: {{ csv_file.stat.size }} bytes)"
+
