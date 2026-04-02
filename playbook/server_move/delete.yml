@@ -70,7 +70,7 @@
     
     - name: 5.DB root password
       include_vars:
-        file: /etc/ansible/roles/db/vars/password.yml
+        file: /local_backup/ansible-project/roles/db/vars/password.yml
 
 
 

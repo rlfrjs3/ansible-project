@@ -1,0 +1,90 @@
+---
+- name : 복제 깨졌을 경우, 다시 복제 (mysqldump 사용)
+  hosts: test
+  user: zlxpf
+  become: true
+  become_method: sudo 
+  gather_facts: yes
+
+
+  
+  vars: 
+    date: "{{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}"
+
+  vars_files:
+    - ../vars/mysql_info.yml
+    
+
+
+
+  tasks:
+    - name: 1. 슬레이브 복제 중지 및 초기화
+      shell: |
+        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "STOP SLAVE;" && \
+        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "RESET SLAVE;"
+
+
+    - name: 2. mysqldump 사용하여 마스터 백업
+      shell: | 
+        {{ mysqldump_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql.sock --single-transaction --master-data=2 --all-databases > /local_backup/allbackup_{{ date }}.sql
+
+
+    - name: 3. 슬레이브에 마스터 백업본 import
+      shell: | 
+        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock < /local_backup/allbackup_{{ date }}.sql
+
+
+    - name: 4. 마스터 백업본의 바이너리파일과 포지션 변수에 저장
+      block: 
+        - name: 
+          shell: "grep 'CHANGE MASTER TO MASTER_LOG_FILE' /root/allbackup_{{ date }}.sql | head -n 1"
+          register: master_info
+          failed_when: master_info.stdout == ""
+          
+        - name: 
+          set_fact:
+            BIN: "{{ master_info.stdout | regex_search(\"MASTER_LOG_FILE='([^']+)'\", '\\1') | first }}"
+            POS: "{{ master_info.stdout | regex_search(\"MASTER_LOG_POS=([0-9]+)\", '\\1') | first }}"
+          when: master_info.stdout != ""  
+
+        - name:
+          debug:
+            msg:
+              - "바이너리 로그파일 : {{ BIN }}"
+              - "포지션 : {{ POS }}"
+
+    - name: 5. 복제 다시구성
+      shell: | 
+        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_USER='repl', MASTER_PASSWORD='{{ repl_mysql_pwd }}', MASTER_LOG_FILE='{{ BIN }}', MASTER_LOG_POS={{ POS }};" && \
+        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "START SLAVE;"
+
+
+    - name: 6. 복제 상태확인
+      block:
+        - name: 
+          shell: |
+            {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "SHOW SLAVE STATUS \G;"
+          register: slave_status
+          changed_when: false
+        
+        - name: 
+          debug: 
+            var: slave_status.stdout_lines
+          when: slave_status.stdout is defined
+
+        - name: 
+          debug:
+            msg: 
+              - "Slave_IO_Running: {{ slave_status.stdout | regex_search('Slave_IO_Running: (\\w+)', '\\1') | first }}"
+              - "Slave_SQL_Running: {{ slave_status.stdout | regex_search('Slave_SQL_Running: (\\w+)', '\\1') | first }}"
+              - "Seconds_Behind_Master(초): {{ slave_status.stdout | regex_search('Seconds_Behind_Master: (\\d+)', '\\1') | first | default('0') }}"
+          when: slave_status.stdout is defined 
+
+      
+
+
+
+      
+
+      
+        

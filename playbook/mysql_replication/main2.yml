@@ -1,5 +1,5 @@
 ---
-- name : 단독서버 리플리케이션 #shell 모듈 사용
+- name : 단독서버 리플리케이션     #mysql 모듈 사용 - 설정파일 가져오는 부분은 어쩔수 없이 shell 모듈 사용 (미완료)
   hosts: test
   user: zlxpf
   become: true
@@ -7,20 +7,18 @@
   gather_facts: yes
 
   
-
-  vars_files:
+  vars_file:
     - vars/mysql_info.yml
 
 
-
   tasks:
-    - name: 1. mysql 버전확인 변수
+    - name: mysql 버전확인 변수
       shell: |
-        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -N -s -e "SELECT VERSION();" | awk -F '.' '{print $1}'
+        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' -N -s -e "SELECT VERSION();" | awk -F '.' '{print $1}'
       register: mysql_version
 
 
-    - name: 2. 설정파일 rsync (my.cnf 동기화 +  복제 계정 및 권한 생성)
+    - name: 설정파일(my.cnf와 리플리케이션 설정) rsync
       block:       
         - name: mysql 5 버전일때 
           shell: | 
@@ -39,11 +37,11 @@
           when: mysql_version.stdout == "8"
 
     
-    - name: 3. 복제 계정(=repl) 생성 후 mysql 중지
+    - name: 복제 계정(=repl) 생성 후 mysql 중지
       shell: |
         export PATH=$PATH:{{ mysql_path | dirname }}
       
-        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' < /root/multi1.sql 
+        {{ mysql_path }} -uroot -p'{{ mysql_pwd }}' < /root/multi1.sql 
         /etc/init.d/mysqld stop
         sleep 10 
         ps -ef | grep mysql | grep -v grep | wc -l 
@@ -55,7 +53,7 @@
         mysql_count: "{{ mysql_state.stdout_lines[-1] }}"
  
 
-    - name: 4. 마스터/슬레이브 데이터 동기화
+    - name: 마스터 데이터를 슬레이브 datadir로 rsync
       block: 
         - name: 
           shell: |
@@ -70,7 +68,7 @@
           when: mysql_count != "0"
 
 
-    - name: 5. mysql 스크립트 백업,변경 후 mysql 시작
+    - name: mysql 스크립트 백업,변경 후 mysql 시작
       block:
         - name: mysql 5 버전일떄
           shell: | 
@@ -93,41 +91,60 @@
           when: mysql_version.stdout == "8"
 
 
-    - name: 6. 마스터DB  상태 확인 (바이너리 파일과 포지션번호 저장)
-      block:
-        - name: 마스터 상태 저장
-          shell: |
-            {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -N -s -e 'SHOW MASTER STATUS' 2>/dev/null 
-          register: MASTER_STATUS
+    - name: 마스터DB 상태 조회
+      community.mysql.mysql_info:
+        login_user: "root"
+        login_password: "{{ mysql_pwd }}"
+        login_unix_socket: "/tmp/mysql.sock" 
+        filter: "master"  #마스터의 바이너리 파일과 포지션 
+      register: master_info
+ 
 
-        - name: 바이너리 파일 및 포지션 분리해서 저장
-          set_fact:
-            BIN: "{{ MASTER_STATUS.stdout.split()[0] }}"
-            POS: "{{ MASTER_STATUS.stdout.split()[1] }}"
+    - name: 마스터 정보 변수 할당 
+      set_fact:
+        BIN: "{{ master_info.master.File }}"
+        POS: "{{ master_info.master.Position }}"
 
+
+    - name: 복제 구성
+      community.mysql.mysql_replication:
+        mode: changemaster
+        login_user: "root"
+        login_password: "{{ mysql_pwd }}"
+        login_unix_socket: "/tmp/mysql1.sock"
+        master_host: "127.0.0.1"
+        master_user: "repl"
+        master_password: "gabiacns_flvmf"
+        master_log_file: "{{ BIN }}"
+        master_log_pos: "{{ POS }}"
+
+
+    - name: 복제 시작
+      community.mysql.mysql_replication:
+        mode: startslave
+        login_user: "root"
+        login_password: "{{ mysql_pwd }}"
+        login_unix_socket: "/tmp/mysql1.sock"
+
+
+    - name: 복제 상태 조회
+      community.mysql.mysql_info:
+        login_user: "root"
+        login_password: "{{ mysql_pwd }}"
+        login_unix_socket: "/tmp/mysql1.sock"
+        filter: "slave"
+      register: slave_info
+
+
+    - name: 상태 출력
+      debug:
+        msg: 
+          - "IO_Running: {{ slave_info.slave.Slave_IO_Running }}"
+          - "SQL_Running: {{ slave_info.slave.Slave_SQL_Running }}"
+          - "Seconds_Behind: {{ slave_info.slave.Seconds_Behind_Master }}"
+ 
+      
+    
         
-
-    - name: 7. 마스터-슬레이브 리플리케이션 구성 (CHANGE MASTER ~)
-      shell: |
-        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "STOP SLAVE;"
-        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "RESET SLAVE;"      
-        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "CHANGE MASTER TO  MASTER_HOST='127.0.0.1', MASTER_USER='repl', MASTER_PASSWORD='gabiacns_flvmf', MASTER_LOG_FILE='{{ BIN }}', MASTER_LOG_POS={{ POS }}"
-        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "START SLAVE;"      
-
-
-    - name: 8. 리플리케이션 상태 확인
-      block:
-        - name: 
-          shell: |
-            {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e 'SHOW SLAVE STATUS \G;' | egrep 'Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master'
-          register: REP_STATUS
-
-        - name: 
-          debug:
-            msg: "{{ REP_STATUS.stdout }}"
-
-
-
-
-
+       
 

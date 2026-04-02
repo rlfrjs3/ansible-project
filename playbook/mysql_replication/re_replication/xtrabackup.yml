@@ -1,0 +1,113 @@
+---
+- name : 복제 깨졌을 경우, 다시 복제 (xtrabackup 사용)
+  hosts: test
+  user: zlxpf
+  become: true
+  become_method: sudo 
+  gather_facts: yes
+
+
+  
+  vars: 
+    date: "{{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}"
+
+  vars_files:
+    - ../vars/mysql_info.yml
+    
+
+
+
+  tasks:
+    - name: 1. 슬레이브 복제 중지 및 초기화
+      shell: |
+        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "STOP SLAVE;" && \
+        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "RESET SLAVE;"
+      ignore_errors: yes
+
+    - name: 2. Xtrabackup 설치 (MySQL 8 버전에서만 사용가능)
+      block: 
+        - name: 2.1 Percona 레포지토리 설치 (이미 있으면 skip)
+          dnf: 
+            name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+            state: present
+            disable_gpg_check: yes
+
+        - name: 2.2 Xtrabackup 8.0 저장소 활성화
+          shell: "percona-release setup pxb-80"
+          register: repo_setup
+          changed_when: "'already' not in repo_setup.stdout"
+        
+        - name: 2.3 Xtrabackup 8.0  및 qpress 패키지 설치
+          dnf: 
+            name:
+              - percona-xtrabackup-80
+              - qpress
+            state: present
+
+        - name: 2.4 설치된 버전 확인
+          block:
+            - name: 
+              shell: "xtrabackup --version"
+              register: xtra_ver
+              changed_when: false
+         
+            - name: 
+              debug:
+                msg: "설치된 버전 : {{ xtra_ver.stdout }}"
+      
+
+    - name: 3. xtrabackup 사용하여 마스터 백업하여 슬레이브 datadir에 복사
+      block: 
+        - name: 3.1 백업본 저장할 디렉터리 생성
+          file:
+            path: /local_backup/xtrabackup
+            state: directory
+    
+        - name: 3.2 백업하여 슬레이브 datadir 복원까지
+          shell: | 
+            xtrabackup --defaults-file=/etc/my.cnf --user='root' --password='{{ root_mysql_pwd }}' --backup --compress --compress_threads=8 --parallel=8 --no-lock --stream=xbstream > /local_backup/xbstream 
+            xbstream -x -C /local_backup/xtrabackup < /local_backup/xbstream
+            xtrabackup --parallel=8 --decompress --remove-original --target-dir=/local_backup/xtrabackup
+            xtrabackup --prepare --target-dir=/local_backup/xtrabackup
+            xtrabackup --parallel=8 --copy-back --datadir=/local_backup/mysql_slave/ --target-dir=/local_backup/xtrabackup    
+            chown -R mysql.mysql /local_backup/mysql_slave/
+#          register: xtra_result 
+
+
+    - name: 4. 바이너리 파일과 포지션 변수 저장
+      block:
+        - name: 
+          shell: "grep 'binlog_pos' /local_backup/xtrabackup/xtrabackup_info"
+          register: xtrabackup_info
+  
+        - name: 
+          set_fact:
+            BIN: "{{ xtrabackup_info.stdout | regex_findall(\"filename '([^']+)'\") | first }}"
+            POS: "{{ xtrabackup_info.stdout | regex_findall(\"position '([^']+)'\") | first }}"
+        
+        - name: 
+          debug:
+            msg: "바이너리 파일: {{ BIN }} / 포지션: {{ POS }}"
+
+
+    - name: 5. 복제 다시구성
+      shell: | 
+        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_USER='repl', MASTER_PASSWORD='{{ repl_mysql_pwd }}', MASTER_LOG_FILE='{{ BIN }}', MASTER_LOG_POS={{ POS }};"
+        {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "START SLAVE;"
+    
+     
+    - name: 6. 복제 상태확인
+      block: 
+        - name:        
+          shell: |  
+            {{ mysql_path }} -uroot -p'{{ root_mysql_pwd }}' -S /tmp/mysql1.sock -e "SHOW SLAVE STATUS \G" | egrep 'Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master'
+          register: REP_STATUS
+ 
+        - name: 
+          debug:
+            msg: "{{ REP_STATUS.stdout }}"
+ 
+     
+        
+
+
