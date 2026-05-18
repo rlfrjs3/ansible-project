@@ -1,0 +1,26 @@
+---
+- name: 신규 SSL 인증서 원격서버로 동기화
+  hosts: test
+  user: zlxpf
+  become: true
+  gather_facts: true
+
+  vars:
+    timestamp: "{{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}_{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}"
+    local_ssl_path: "/home/firefox/wild.firstmall.kr/"        #새로 발급받은 SSL 인증서가 있는 앤서블 서버 경로 (플레이북 실행 전 업로드 필요)
+    remote_ssl_path: "/www/ssl_firstmall/wild.firstmall.kr/"            #원격서버 경로
+    backup_ssl_path: "/www/ssl_firstmall/{{ timestamp }}_wild.firstmall.kr/"     #원격서버에 백업할 파일이름
+#    ori_keyfile: "star_firstmall_kr_key.key"
+#    ori_certfile: "star_firstmall_kr_cert.pem"
+#    ori_chainfile: "Chain_RootCA_Bundle.crt"
+
+
+  tasks:
+    - include_role:
+        name: ssl_renew
+        tasks_from: rsync_ssl.yml
+    - include_role:
+        name: ssl_renew
+        tasks_from: web_check.yml
+
+

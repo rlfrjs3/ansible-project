@@ -1,5 +1,8 @@
+#강원더몰 물리서버 전용 플레이북, DB가 1200개 정도 있어서 기본꺼 사용하면 메모리 부하 발생되어 새로 만듬
+#select_query 변수에 들어갈 쿼리랑 3번 CSV 헤더는 매번 수정해줘야 함
+
 ---
-- name: 쿼리문 날려서 CSV 형태로 추출       #강원더몰 전용 플레이북, DB가 1200개 정도 있어서 기본꺼 사용하면 메모리 부하 발생되어 새로 만듬
+- name: 쿼리문 날려서 CSV 형태로 추출      
   hosts: firstmall_multi_gwmart_server
   user: zlxpf
   become: yes
@@ -14,15 +17,16 @@
     #mysql_extra_args: "--default-auth=mysql_native_password --ssl-mode=DISABLED"
     select_query: |
       SELECT
-        (SELECT value FROM fm_config WHERE codecd IN ('ssl_domain') AND groupcd IN ('system')) AS ssl_domain,
-        (SELECT value FROM fm_config WHERE codecd IN ('subDomain') AND groupcd IN ('system')) AS subDomain,
-        IF(IFNULL((SELECT value FROM fm_config WHERE codecd IN ('cfg_default_nation') AND groupcd IN ('system')),'')='','구버전','다국어') AS '사이트버전',
-        (SELECT value FROM fm_config WHERE codecd IN ('ssl_use') AND groupcd IN ('system')) AS ssl_use,
-        (SELECT value FROM fm_config WHERE codecd IN ('use_service') AND groupcd IN ('kakaotalk')) AS kakaotalk_use,
-        (SELECT value FROM fm_config WHERE codecd IN ('serviceId') AND groupcd IN ('kakaotalk')) AS kakaotalk_serviceId,
-        (SELECT value FROM fm_config WHERE codecd IN ('authKey') AND groupcd IN ('kakaotalk')) AS kakaotalk_authKey,
-        (SELECT value FROM fm_config WHERE codecd IN ('status') AND groupcd IN ('kakaotalk')) AS kakaotalk_status,
-        (SELECT value FROM fm_config WHERE codecd IN ('yellowId') AND groupcd IN ('kakaotalk')) AS kakaotalk_yellowId;
+        (SELECT value as domain FROM fm_config WHERE codecd LIKE 'subDomain' LIMIT 1) as subdomain,
+        (SELECT domain FROM fm_admin_env LIMIT 1) as domain,
+        (SELECT value FROM fm_config WHERE groupcd='realname' AND codecd='realnamephoneSikey' LIMIT 1) as realnamephoneSikey,
+        (SELECT value FROM fm_config WHERE groupcd='realname' AND codecd='realnamePhoneSipwd' LIMIT 1) as realnamePhoneSipwd,
+        (SELECT value FROM fm_config WHERE groupcd='realname' AND codecd='useRealnamephone' LIMIT 1) as useRealnamephone,
+        (SELECT value FROM fm_config WHERE groupcd='realname' AND codecd='useRealnamephone_dormancy' LIMIT 1) as useRealnamephone_dormancy,
+        (SELECT value FROM fm_config WHERE groupcd='realname' AND codecd='ipinSikey' LIMIT 1) as ipinSikey,
+        (SELECT value FROM fm_config WHERE groupcd='realname' AND codecd='ipinKeyString' LIMIT 1) as ipinKeyString,
+        (SELECT value FROM fm_config WHERE groupcd='realname' AND codecd='useIpin' LIMIT 1) as useIpin,
+        (SELECT value FROM fm_config WHERE groupcd='realname' AND codecd='useIpin_dormancy' LIMIT 1) as useIpin_dormancy;
 
   tasks:
     - name: 1. 서버에서 DB명 추출
@@ -39,9 +43,9 @@
         db_names: "{{ db_list.stdout_lines | unique }}"
 
 
-    - name: 3. CSV 헤더 생성
+    - name: 3. CSV 헤더 생성       
       shell: | 
-        echo "hostname,database,ssl_domain,subDomain,사이트버전,ssl_use,kakaotalk_use,kakaotalk_serviceId,kakaotalk_authKey,kakaotalk_status,kakaotalk_yellowId" > /home/firefox/dbquery_{{ inventory_hostname }}.csv
+        echo "hostname,database,domain,ipinKeyString,ipinSikey,realnamephoneSikey,realnamePhoneSipwd,subdomain,useIpin,useIpin_dormancy,useRealnamephone,useRealnamephone_dormancy" > /home/firefox/dbquery_{{ inventory_hostname }}.csv
       changed_when: true
 
  

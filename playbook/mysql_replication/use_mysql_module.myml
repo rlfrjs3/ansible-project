@@ -1,5 +1,5 @@
 ---
-- name : 단독서버 리플리케이션     #mysql 모듈 사용 - 설정파일 가져오는 부분은 어쩔수 없이 shell 모듈 사용 (미완료)
+- name : 단독서버 리플리케이션     #mysql 모듈 사용 - 설정파일 가져오는 부분은 어쩔수 없이 shell 모듈 사용
   hosts: test
   user: zlxpf
   become: true

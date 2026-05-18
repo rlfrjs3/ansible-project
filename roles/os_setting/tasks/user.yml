@@ -1,0 +1,49 @@
+tasks:
+  - name: User & Group Setting
+    block:
+      - name: 1. Group Setting
+        group:
+          name: "{{ item }}"
+          state: present
+        loop:
+          - gabia
+          - mallusers
+
+      - name: 2. User Setting
+        block:
+          - name: zlxpf 계정
+            user:
+              name: zlxpf
+              group: gabia
+              shell: /bin/bash
+              home: /home/zlxpf
+              password_expire_max: 180
+              password_expire_warn: 30
+
+          - name: shopbuilder 계정
+            user:
+              name: shopbuilder
+              groups: mallusers, gabia
+              shell: /bin/bash
+              home: /home/shopbuilder
+              password_expire_max: 180
+              password_expire_warn: 30
+ 
+          - name: root 계정
+            user:
+              name: root
+              password_expire_max: 180
+              password_expire_warn: 30 
+
+      - name: 3. 불필요 계정 삭제
+        user: 
+          name: "{{ item }}"
+          state: absent
+        loop:
+          - lp
+          - games
+          - ftp
+          - adm
+          - operator
+     
+

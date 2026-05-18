@@ -1,0 +1,25 @@
+- name: resolv 설정
+  blockinfile:
+    path: /etc/resolv.conf
+    state: present
+    block: | 
+      options timeout:1 attempts:1
+      nameserver 127.0.0.1
+      nameserver 164.124.101.2
+      nameserver 168.126.63.1
+    maker: ""
+
+
+- name: SELinux 비활성화
+  selinux:
+    state: disabled
+
+
+
+- name: 언어셋 설정
+  lineinfile:
+    path: /etc/locale.conf
+    regexp: '^LANG='
+    line: 'LANG=ko_KR.UTF-8'
+    state: present
+

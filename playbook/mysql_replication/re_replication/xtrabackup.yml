@@ -1,6 +1,6 @@
 ---
-- name : 복제 깨졌을 경우, 다시 복제 (xtrabackup 사용)
-  hosts: test
+- name : 복제 깨졌을 경우, 다시 복제 (xtrabackup 사용- mysql 8버전에서만 가능)
+  hosts: aaa
   user: zlxpf
   become: true
   become_method: sudo 
@@ -26,8 +26,14 @@
 
     - name: 2. Xtrabackup 설치 (MySQL 8 버전에서만 사용가능)
       block: 
-        - name: 2.1 Percona 레포지토리 설치 (이미 있으면 skip)
-          dnf: 
+        - name: 2.1 dnf 설정 변경
+          replace:
+            path: /etc/dnf/dnf.conf
+            regexp: 'skip_if_unavailable=False'
+            replace: 'skip_if_unavailable=True'
+
+        - name: 2.2 Percona 레포지토리 설치
+          dnf:
             name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
             state: present
             disable_gpg_check: yes
@@ -35,8 +41,8 @@
         - name: 2.2 Xtrabackup 8.0 저장소 활성화
           shell: "percona-release setup pxb-80"
           register: repo_setup
-          changed_when: "'already' not in repo_setup.stdout"
-        
+          changed_when: "'already' not in repo_setup.stdout and 'up to date' not in repo_setup.stdout"
+  
         - name: 2.3 Xtrabackup 8.0  및 qpress 패키지 설치
           dnf: 
             name:
@@ -65,13 +71,13 @@
     
         - name: 3.2 백업하여 슬레이브 datadir 복원까지
           shell: | 
-            xtrabackup --defaults-file=/etc/my.cnf --user='root' --password='{{ root_mysql_pwd }}' --backup --compress --compress_threads=8 --parallel=8 --no-lock --stream=xbstream > /local_backup/xbstream 
+            xtrabackup --defaults-file=/etc/my.cnf --user='root' --password='{{ root_mysql_pwd }}' --socket=/tmp/mysql.sock --backup --compress --compress_threads=8 --parallel=8 --no-lock --stream=xbstream > /local_backup/xbstream  
             xbstream -x -C /local_backup/xtrabackup < /local_backup/xbstream
             xtrabackup --parallel=8 --decompress --remove-original --target-dir=/local_backup/xtrabackup
             xtrabackup --prepare --target-dir=/local_backup/xtrabackup
+            rm -rf /local_backup/mysql_slave/*
             xtrabackup --parallel=8 --copy-back --datadir=/local_backup/mysql_slave/ --target-dir=/local_backup/xtrabackup    
             chown -R mysql.mysql /local_backup/mysql_slave/
-#          register: xtra_result 
 
 
     - name: 4. 바이너리 파일과 포지션 변수 저장

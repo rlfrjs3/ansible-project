@@ -1,0 +1,31 @@
+---
+- name: 1. 웹 바이너리 경로 체크 (80/443 포트를 점유중인 파일 확인)
+  shell: "lsof -t -i:80 -i:443 -sTCP:LISTEN | xargs -I {} readlink -f /proc/{}/exe | sort -u | head -n 1"
+  register: web_bin_path
+  ignore_errors: true
+
+
+- name: 2. 문법 체크
+  shell: "{{ web_bin_path.stdout }} -t"
+  register: config_test
+  when: 
+    - web_bin_path.rc == 0
+    - web_bin_path.stdout != ""
+  ignore_errors: true
+
+
+- name: 3. 웹 리로드
+  shell: | 
+    WEB_PATH="{{ web_bin_path.stdout }}"
+    if [[ "$WEB_PATH"  == *"nginx"* ]]; then
+      $WEB_PATH -s reload
+    elif [[ "$WEB_PATH" == *"httpd"* || "$WEB_PATH" == *"apache"* ]]; then
+      $WEB_PATH -k graceful || $WEB_PATH graceful
+    else
+      echo "Web Server 타입이 확인되지 않음 (수동확인 필요!)"
+      exit 1 
+    fi
+  when: 
+    - web_bin_path.stdout != ""
+    - config_test is defined 
+    - config_test.rc == 0 

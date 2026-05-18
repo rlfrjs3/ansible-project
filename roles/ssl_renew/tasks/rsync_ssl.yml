@@ -1,0 +1,29 @@
+---
+- name: 1. 인증서 디렉터리 백업
+  block: 
+    - name: 1.1 기존 디렉터리 존재여부 확인
+      stat: 
+        path: "{{ remote_ssl_path }}"
+      register: old_ssl_dir
+    
+    - name: 1.2 디렉터리가 존재할 때만 백업 
+      copy: 
+        src: "{{ remote_ssl_path }}"
+        dest: "{{ backup_ssl_path }}"
+        remote_src: yes 
+        mode: preserve  #디렉터리 권한 그대로 유지해서 복사
+      when: old_ssl_dir.stat.exists and old_ssl_dir.stat.isdir
+      #ignore_errors: yes
+      
+- name: 2. 앤서블 로컬서버에 있는 신규 인증서 디렉터리를 원격지 서버로 동기화
+  synchronize:
+    src: "{{ local_ssl_path }}"
+    dest: "{{ remote_ssl_path }}"
+    recursive: yes
+    delete: yes   # rsync --delete 옵션, 즉 소스에 없는 것은 원격지에서도 지움 
+    archive: yes
+
+
+      
+
+       
