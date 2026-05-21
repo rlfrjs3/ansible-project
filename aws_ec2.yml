@@ -1,0 +1,12 @@
+plugin: aws_ec2
+
+regions:
+  - ap-northeast-2
+
+hostnames:
+  - private-ip-address
+
+keyed_groups:
+  - key: tags.Name
+    prefix: tf-project-1-web-server
+

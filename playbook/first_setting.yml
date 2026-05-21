@@ -1,6 +1,6 @@
 ---
 - name: OS initial Setting
-  hosts: 
+  hosts: instance_mgt_tf_project_1_web_server
   become: true
   become_method: sudo
   gather_facts: true
