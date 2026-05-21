@@ -6,13 +6,16 @@
   gather_facts: true
 
 
-  - include_role:
-      name: os_setting
-      tasks_from: user.yml
 
-  - include_role:
-      name: os_setting
-      tasks_from: extra.yml
+  tasks:
+
+    - include_role:
+        name: os_setting
+        tasks_from: user.yml
+
+    - include_role:
+        name: os_setting
+        tasks_from: extra.yml
 
 
 
